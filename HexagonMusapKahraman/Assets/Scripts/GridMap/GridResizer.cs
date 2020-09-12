@@ -17,10 +17,15 @@ namespace HexagonMusapKahraman.GridMap
         {
             size.x = (int) Mathf.Clamp(size.x, 2, 15);
             size.y = (int) Mathf.Clamp(size.y, 2, 15);
-            minCameraSize = Mathf.Clamp(minCameraSize,1, 10);
+            minCameraSize = Mathf.Clamp(minCameraSize, 1, 10);
             _tilemap = GetComponentInChildren<Tilemap>();
             _collider = _tilemap.GetComponent<BoxCollider2D>();
             _camera = Camera.main;
+        }
+
+        public Vector2 GetGridSize()
+        {
+            return size;
         }
 
         public void ResizeGridMap()

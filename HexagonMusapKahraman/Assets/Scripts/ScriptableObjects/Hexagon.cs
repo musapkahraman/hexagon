@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace HexagonMusapKahraman.ScriptableObjects
 {
     [CreateAssetMenu]
     public class Hexagon : ScriptableObject
     {
-        [SerializeField] private Color32 color;
+        public Tile tile;
+        public Color32 color;
     }
 }
