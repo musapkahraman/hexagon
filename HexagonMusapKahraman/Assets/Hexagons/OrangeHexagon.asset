@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: edb84bbbee9b4b70a3b1d9294ff55e34, type: 3}
-  m_Name: YellowHexagon
+  m_Name: OrangeHexagon
   m_EditorClassIdentifier: 
   tile: {fileID: 11400000, guid: 899c4cdf3b6961644a398160e05af601, type: 2}
   color:
     serializedVersion: 2
-    rgba: 4284929750
+    rgba: 4278235389
