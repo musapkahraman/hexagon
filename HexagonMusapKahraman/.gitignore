@@ -91,5 +91,5 @@ crashlytics-build.properties
 
 # Assets from the Unity Asset Store
 # DOTween
-[Aa]ssets/Demigiant/
-[Aa]ssets/Demigiant.meta
+[Aa]ssets/Plugins/
+[Aa]ssets/Plugins.meta
