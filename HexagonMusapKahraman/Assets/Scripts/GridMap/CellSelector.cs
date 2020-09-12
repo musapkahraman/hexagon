@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using HexagonMusapKahraman.Core;
 using HexagonMusapKahraman.Gestures;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,6 +12,7 @@ namespace HexagonMusapKahraman.GridMap
         [SerializeField] private int selectionCount = 3;
         private Camera _camera;
         private GridBuilder _gridBuilder;
+        private HexagonGroupController _groupController;
         private bool _isUserRotateInput;
         private Vector3 _selectionCenter;
 
@@ -18,6 +20,7 @@ namespace HexagonMusapKahraman.GridMap
         {
             _camera = Camera.main;
             _gridBuilder = GetComponentInParent<GridBuilder>();
+            _groupController = GetComponentInParent<HexagonGroupController>();
         }
 
         private void OnEnable()
@@ -60,16 +63,29 @@ namespace HexagonMusapKahraman.GridMap
             }
 
             var neighbors = new List<PlacedHexagon>();
-            for (var i = 0; i < selectionCount; i++)
+            for (var i = 0; neighbors.Count < selectionCount; i++)
             {
-                float distance = distances.Keys[i];
-                neighbors.Add(distances[distance]);
+                if (i > 1)
+                {
+                    float distanceBetweenLegs =
+                        Vector3.SqrMagnitude(neighbors[1].Center - distances[distances.Keys[i]].Center);
+                    if (distanceBetweenLegs > 2) continue;
+                }
+
+                neighbors.Add(distances[distances.Keys[i]]);
             }
 
-            _selectionCenter = neighbors[0].Center;
-            foreach (var placedHexagon in neighbors)
-                _selectionCenter = Vector3.Lerp(_selectionCenter, placedHexagon.Center, 0.5f);
-            Debug.Log($"selectionCenter: {_selectionCenter}");
+            var sumX = 0f;
+            var sumY = 0f;
+            for (var i = 0; i < selectionCount; i++)
+            {
+                sumX += neighbors[i].Center.x;
+                sumY += neighbors[i].Center.y;
+            }
+
+            _selectionCenter = new Vector3(sumX / selectionCount, sumY / selectionCount, 0);
+
+            _groupController.ShowAtCenter(_selectionCenter);
         }
 
         private void OnRotated(RotationDirection direction)

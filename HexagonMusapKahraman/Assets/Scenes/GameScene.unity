@@ -2340,6 +2340,7 @@ GameObject:
   - component: {fileID: 1872030127}
   - component: {fileID: 1872030129}
   - component: {fileID: 1872030130}
+  - component: {fileID: 1872030131}
   m_Layer: 0
   m_Name: Grid
   m_TagString: Untagged
@@ -2409,3 +2410,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 55d0580cd03d07649b64f9428608f9bd, type: 2}
   - {fileID: 11400000, guid: ffa839ef4b25ac345be41e2a535db08a, type: 2}
   - {fileID: 11400000, guid: 301285f1c8a49064a886324dfcb62f1f, type: 2}
+--- !u!114 &1872030131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872030126}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4bc469838aa6a14594ca82ff4084334, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rotatingSpritePrefab: {fileID: 5616547374859051558, guid: 445ad7cbe8d27674191e6a6ed5ddd7a4, type: 3}
