@@ -5,10 +5,10 @@ namespace HexagonMusapKahraman.GridMap
 {
     public class GridResizer : MonoBehaviour
     {
-        private const float MinCameraSize = 6.5f;
         [SerializeField] private Tile tile;
         [SerializeField] private Vector2 size = new Vector2(8, 9);
         [SerializeField] private Vector2 cameraOffset = new Vector2(1, 1);
+        [SerializeField] private float minCameraSize = 5;
         private Camera _camera;
         private BoxCollider2D _collider;
         private Tilemap _tilemap;
@@ -17,6 +17,7 @@ namespace HexagonMusapKahraman.GridMap
         {
             size.x = (int) Mathf.Clamp(size.x, 2, 15);
             size.y = (int) Mathf.Clamp(size.y, 2, 15);
+            minCameraSize = Mathf.Clamp(minCameraSize,1, 10);
             _tilemap = GetComponentInChildren<Tilemap>();
             _collider = _tilemap.GetComponent<BoxCollider2D>();
             _camera = Camera.main;
@@ -59,6 +60,8 @@ namespace HexagonMusapKahraman.GridMap
             {
                 _camera.orthographicSize = mapHalfHeight * 1.2f;
             }
+
+            if (_camera.orthographicSize < minCameraSize) _camera.orthographicSize = minCameraSize;
         }
     }
 }

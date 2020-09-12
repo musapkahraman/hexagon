@@ -2325,3 +2325,4 @@ MonoBehaviour:
   tile: {fileID: 11400000, guid: 899c4cdf3b6961644a398160e05af601, type: 2}
   size: {x: 8, y: 9}
   cameraOffset: {x: 0, y: 0.5}
+  minCameraSize: 5
