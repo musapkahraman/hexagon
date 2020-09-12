@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using HexagonMusapKahraman.Gestures;
 using HexagonMusapKahraman.GridMap;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace HexagonMusapKahraman.Core
         private readonly List<GameObject> _hexagonSpriteMasks = new List<GameObject>();
         private readonly List<GameObject> _hexagonSprites = new List<GameObject>();
         private GameObject _rotatingParent;
+        private int _rotationCheckCounter;
 
         public void ShowAtCenter(Vector3 center, IEnumerable<PlacedHexagon> neighbors)
         {
@@ -34,16 +36,33 @@ namespace HexagonMusapKahraman.Core
 
         public void Rotate(RotationDirection direction)
         {
+            if (_rotatingParent == null) return;
             switch (direction)
             {
                 case RotationDirection.Clockwise:
-                    Debug.Log("Clockwise");
+                    _rotatingParent.transform.DORotate(120 * Vector3.back, 0.3f, RotateMode.LocalAxisAdd)
+                        .OnComplete(Check);
                     break;
                 case RotationDirection.AntiClockwise:
-                    Debug.Log("AntiClockwise");
+                    _rotatingParent.transform.DORotate(120 * Vector3.forward, 0.3f, RotateMode.LocalAxisAdd)
+                        .OnComplete(Check);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
+            }
+
+            void Check()
+            {
+                if (_rotationCheckCounter < 2)
+                {
+                    _rotationCheckCounter++;
+                    Debug.Log("Check!");
+                    Rotate(direction);
+                }
+                else
+                {
+                    _rotationCheckCounter = 0;
+                }
             }
         }
 
