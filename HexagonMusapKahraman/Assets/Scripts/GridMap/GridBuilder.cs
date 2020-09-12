@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
-using HexagonMusapKahraman.GridMap;
 using HexagonMusapKahraman.ScriptableObjects;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace HexagonMusapKahraman.Core
+namespace HexagonMusapKahraman.GridMap
 {
     [RequireComponent(typeof(GridResizer))]
     public class GridBuilder : MonoBehaviour
@@ -12,14 +11,8 @@ namespace HexagonMusapKahraman.Core
         [SerializeField] private List<Hexagon> hexagons;
         private readonly List<PlacedHexagon> _placedHexagons = new List<PlacedHexagon>();
         private Grid _grid;
-        private Tilemap _tilemap;
         private Vector2 _gridSize;
-
-        private void OnValidate()
-        {
-            var hashSet = new HashSet<Hexagon>();
-            foreach (var hexagon in hexagons) hashSet.Add(hexagon);
-        }
+        private Tilemap _tilemap;
 
         private void Awake()
         {
@@ -27,6 +20,12 @@ namespace HexagonMusapKahraman.Core
             _tilemap = GetComponentInChildren<Tilemap>();
             _gridSize = GetComponent<GridResizer>().GetGridSize();
             SetInitialMap();
+        }
+
+        private void OnValidate()
+        {
+            var hashSet = new HashSet<Hexagon>();
+            foreach (var hexagon in hexagons) hashSet.Add(hexagon);
         }
 
         private void SetInitialMap()

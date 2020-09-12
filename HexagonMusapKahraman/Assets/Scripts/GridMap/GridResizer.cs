@@ -61,11 +61,7 @@ namespace HexagonMusapKahraman.GridMap
             float mapHalfHeight = mapBounds.size.y * 0.5f;
             float mapHalfWidth = mapBounds.size.x * 0.5f;
             _camera.orthographicSize = mapHalfWidth / camHalfWidth * _camera.orthographicSize;
-            if (_camera.orthographicSize < mapHalfHeight * 1.2f)
-            {
-                _camera.orthographicSize = mapHalfHeight * 1.2f;
-            }
-
+            if (_camera.orthographicSize < mapHalfHeight * 1.2f) _camera.orthographicSize = mapHalfHeight * 1.2f;
             if (_camera.orthographicSize < minCameraSize) _camera.orthographicSize = minCameraSize;
         }
     }

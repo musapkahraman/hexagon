@@ -1,19 +1,18 @@
 ﻿using System.Collections.Generic;
 using HexagonMusapKahraman.Gestures;
-using HexagonMusapKahraman.GridMap;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace HexagonMusapKahraman.Core
+namespace HexagonMusapKahraman.GridMap
 {
     [RequireComponent(typeof(BoxCollider2D))]
     public class CellSelector : MonoBehaviour, IPointerClickHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
     {
         [SerializeField] private int selectionCount = 3;
-        private Vector3 _selectionCenter;
         private Camera _camera;
         private GridBuilder _gridBuilder;
         private bool _isUserRotateInput;
+        private Vector3 _selectionCenter;
 
         private void Awake()
         {
@@ -69,9 +68,7 @@ namespace HexagonMusapKahraman.Core
 
             _selectionCenter = neighbors[0].Center;
             foreach (var placedHexagon in neighbors)
-            {
                 _selectionCenter = Vector3.Lerp(_selectionCenter, placedHexagon.Center, 0.5f);
-            }
             Debug.Log($"selectionCenter: {_selectionCenter}");
         }
 
