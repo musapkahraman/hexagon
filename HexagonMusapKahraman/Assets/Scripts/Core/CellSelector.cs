@@ -1,10 +1,10 @@
 ﻿using HexagonMusapKahraman.Gestures;
-using HexagonMusapKahraman.Pointer;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace HexagonMusapKahraman.Core
 {
+    [RequireComponent(typeof(BoxCollider2D))]
     public class CellSelector : MonoBehaviour, IPointerDownHandler, IDragHandler, IBeginDragHandler
     {
         private Camera _camera;

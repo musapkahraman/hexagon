@@ -1,5 +1,4 @@
 ﻿using System;
-using HexagonMusapKahraman.Pointer;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -7,10 +6,10 @@ namespace HexagonMusapKahraman.Gestures
 {
     public static class RotationGesture
     {
-        public static event Action<RotationDirection> Rotated;
         private static bool _rotated;
         private static int _counter;
         private static Vector2 _dragBeginPoint;
+        public static event Action<RotationDirection> Rotated;
 
         public static void OnBeginDrag(PointerEventData eventData)
         {
