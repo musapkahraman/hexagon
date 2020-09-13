@@ -19,7 +19,9 @@ namespace HexagonMusapKahraman.GridMap
         {
             _grid = GetComponent<Grid>();
             _tilemap = GetComponentInChildren<Tilemap>();
-            _gridSize = GetComponent<GridResizer>().GetGridSize();
+            var gridResizer = GetComponent<GridResizer>();
+            gridResizer.ResizeGridMap();
+            _gridSize = gridResizer.GetGridSize();
             SetInitialMap();
         }
 
