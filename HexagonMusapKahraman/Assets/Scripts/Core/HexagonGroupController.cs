@@ -87,22 +87,7 @@ namespace HexagonMusapKahraman.Core
                     }
                     else
                     {
-                        var sumX = 0f;
-                        var sumY = 0f;
-                        var color = Color.white;
-                        foreach (var hexagon in matchList)
-                        {
-                            sumX += hexagon.Center.x;
-                            sumY += hexagon.Center.y;
-
-                            Instantiate(hexagonSpriteMaskPrefab, hexagon.Center, Quaternion.identity);
-                            color = hexagon.Hexagon.color;
-                        }
-
-                        particles.transform.position = new Vector3(sumX / matchList.Count, sumY / matchList.Count);
-                        var main = particles.main;
-                        main.startColor = color;
-                        particles.Play();
+                        PopMatchedTilesOut(matchList);
                         ResetGateKeepers();
                         ClearInstantiatedObjects();
                     }
@@ -170,8 +155,27 @@ namespace HexagonMusapKahraman.Core
             }
 
             if (matchList.Count <= 2) return false;
+            foreach (var hexagon in matchList) tempPlacedHexagons.Remove(hexagon);
             _gridBuilder.SetPlacement(tempPlacedHexagons);
             return true;
+        }
+
+        private void PopMatchedTilesOut(ICollection<PlacedHexagon> matchList)
+        {
+            var sumX = 0f;
+            var sumY = 0f;
+            var color = Color.white;
+            foreach (var hexagon in matchList)
+            {
+                sumX += hexagon.Center.x;
+                sumY += hexagon.Center.y;
+                color = hexagon.Hexagon.color;
+            }
+
+            particles.transform.position = new Vector3(sumX / matchList.Count, sumY / matchList.Count);
+            var main = particles.main;
+            main.startColor = color;
+            particles.Play();
         }
     }
 }
