@@ -41,12 +41,12 @@ namespace HexagonMusapKahraman.GridMap
                 _tilemap.SetTile(position, tile);
                 _placedHexagons.Add(new PlacedHexagon
                 {
-                    Hexagon = hexagon, Coordinate = position, Center = _grid.GetCellCenterWorld(position)
+                    Hexagon = hexagon, Center = _grid.GetCellCenterWorld(position)
                 });
             }
         }
 
-        public IEnumerable<PlacedHexagon> GetPlacement()
+        public List<PlacedHexagon> GetPlacement()
         {
             return new List<PlacedHexagon>(_placedHexagons);
         }

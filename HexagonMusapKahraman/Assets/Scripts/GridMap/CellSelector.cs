@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using HexagonMusapKahraman.Core;
+﻿using HexagonMusapKahraman.Core;
 using HexagonMusapKahraman.Gestures;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -55,26 +54,15 @@ namespace HexagonMusapKahraman.GridMap
             var cameraClickedWorldPoint = _camera.ScreenToWorldPoint(eventData.position);
             var clickedPoint = new Vector3(cameraClickedWorldPoint.x, cameraClickedWorldPoint.y, 0);
             Debug.Log($"clickedPoint: {clickedPoint}");
-            var distances = new SortedList<float, PlacedHexagon>();
-            foreach (var placedHexagon in _gridBuilder.GetPlacement())
+            var clickedCell = GetComponentInParent<Grid>().WorldToCell(clickedPoint);
+            var grid = GetComponentInParent<Grid>();
+            var n = NeighborHood.GetNeighbors(grid.GetCellCenterWorld(clickedCell), _gridBuilder.GetPlacement(), grid);
+            foreach (var placedHexagon in n)
             {
-                float sqrMagnitude = Vector3.SqrMagnitude(clickedPoint - placedHexagon.Center);
-                distances.Add(sqrMagnitude, placedHexagon);
+                Debug.Log($"name: {placedHexagon.Hexagon.name} center: {placedHexagon.Center}");
             }
 
-            var neighbors = new List<PlacedHexagon>();
-            for (var i = 0; neighbors.Count < selectionCount; i++)
-            {
-                if (i > 1)
-                {
-                    float distanceBetweenLegs =
-                        Vector3.SqrMagnitude(neighbors[1].Center - distances[distances.Keys[i]].Center);
-                    if (distanceBetweenLegs > 2) continue;
-                }
-
-                neighbors.Add(distances[distances.Keys[i]]);
-            }
-
+            var neighbors = NeighborHood.GetNeighbors(clickedPoint, _gridBuilder.GetPlacement(), selectionCount);
             var sumX = 0f;
             var sumY = 0f;
             for (var i = 0; i < selectionCount; i++)
@@ -84,7 +72,6 @@ namespace HexagonMusapKahraman.GridMap
             }
 
             _selectionCenter = new Vector3(sumX / selectionCount, sumY / selectionCount, 0);
-
             _groupController.ShowAtCenter(_selectionCenter, neighbors);
         }
 
