@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using HexagonMusapKahraman.Core;
 using UnityEngine;
 
 namespace HexagonMusapKahraman.GridMap
@@ -79,7 +80,7 @@ namespace HexagonMusapKahraman.GridMap
                 return true;
             }
 
-            neighbor = new PlacedHexagon {Hexagon = null, Center = Vector3.negativeInfinity};
+            neighbor = new PlacedHexagon(null, Vector3.negativeInfinity);
             return false;
         }
     }

@@ -53,15 +53,6 @@ namespace HexagonMusapKahraman.GridMap
             if (_isUserRotateInput) return;
             var cameraClickedWorldPoint = _camera.ScreenToWorldPoint(eventData.position);
             var clickedPoint = new Vector3(cameraClickedWorldPoint.x, cameraClickedWorldPoint.y, 0);
-            Debug.Log($"clickedPoint: {clickedPoint}");
-            var clickedCell = GetComponentInParent<Grid>().WorldToCell(clickedPoint);
-            var grid = GetComponentInParent<Grid>();
-            var n = NeighborHood.GetNeighbors(grid.GetCellCenterWorld(clickedCell), _gridBuilder.GetPlacement(), grid);
-            foreach (var placedHexagon in n)
-            {
-                Debug.Log($"name: {placedHexagon.Hexagon.name} center: {placedHexagon.Center}");
-            }
-
             var neighbors = NeighborHood.GetNeighbors(clickedPoint, _gridBuilder.GetPlacement(), selectionCount);
             var sumX = 0f;
             var sumY = 0f;

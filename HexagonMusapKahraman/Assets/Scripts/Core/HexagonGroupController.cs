@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using HexagonMusapKahraman.Gestures;
 using HexagonMusapKahraman.GridMap;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace HexagonMusapKahraman.Core
 {
@@ -19,10 +17,9 @@ namespace HexagonMusapKahraman.Core
         private readonly List<GameObject> _hexagonSprites = new List<GameObject>();
         private Grid _grid;
         private GridBuilder _gridBuilder;
+        private bool _isAlreadyRotating;
         private GameObject _rotatingParent;
         private int _rotationCheckCounter;
-        private bool _isAlreadyRotating;
-        private List<PlacedHexagon> _placedHexagons;
 
         private void Awake()
         {
@@ -36,12 +33,9 @@ namespace HexagonMusapKahraman.Core
 
             ClearInstantiatedObjects();
 
-            _placedHexagons = _gridBuilder.GetPlacement();
             _rotatingParent = Instantiate(rotatingParentPrefab, center, Quaternion.identity);
             foreach (var placedHexagon in neighbors)
             {
-                _placedHexagons.Remove(placedHexagon);
-
                 var hexagonSprite = Instantiate(hexagonSpritePrefab, placedHexagon.Center, Quaternion.identity);
                 hexagonSprite.GetComponent<SpriteRenderer>().color = placedHexagon.Hexagon.color;
                 hexagonSprite.GetComponent<HexagonSprite>().Hexagon = placedHexagon;
@@ -80,10 +74,18 @@ namespace HexagonMusapKahraman.Core
 
             void OnRotationCompleted()
             {
-                if (_rotationCheckCounter < 2)
+                if (_rotationCheckCounter >= 2)
+                {
+                    ResetGateKeepers();
+                }
+                else
                 {
                     _rotationCheckCounter++;
-                    if (CheckForMatch(out var matchList))
+                    if (!CheckForMatch(out var matchList))
+                    {
+                        Rotate(direction);
+                    }
+                    else
                     {
                         var sumX = 0f;
                         var sumY = 0f;
@@ -92,25 +94,18 @@ namespace HexagonMusapKahraman.Core
                         {
                             sumX += hexagon.Center.x;
                             sumY += hexagon.Center.y;
-                            
+
                             Instantiate(hexagonSpriteMaskPrefab, hexagon.Center, Quaternion.identity);
                             color = hexagon.Hexagon.color;
                         }
 
-                        particles.transform.position = new Vector3(sumX / matchList.Count, sumY/ matchList.Count);
+                        particles.transform.position = new Vector3(sumX / matchList.Count, sumY / matchList.Count);
                         var main = particles.main;
                         main.startColor = color;
                         particles.Play();
                         ResetGateKeepers();
                         ClearInstantiatedObjects();
-                        return;
                     }
-
-                    Rotate(direction);
-                }
-                else
-                {
-                    ResetGateKeepers();
                 }
 
                 void ResetGateKeepers()
@@ -132,41 +127,41 @@ namespace HexagonMusapKahraman.Core
 
         private bool CheckForMatch(out HashSet<PlacedHexagon> matchList)
         {
-            // for (var j = 0; j < _hexagonSprites.Count; j++)
-            // {
-            //     _placedHexagons.Add(new PlacedHexagon
-            //     {
-            //         Center = _hexagonSprites[j].transform.position,
-            //         Hexagon = _hexagonSprites[j].GetComponent<HexagonSprite>().Hexagon.Hexagon
-            //     });
-            // }
+            var tempPlacedHexagons = _gridBuilder.GetPlacement();
+            for (var i = 0; i < _hexagonSprites.Count; i++)
+            for (var index = 0; index < tempPlacedHexagons.Count; index++)
+                if (tempPlacedHexagons[index].Equals(_hexagonSprites[i].GetComponent<HexagonSprite>().Hexagon))
+                    tempPlacedHexagons[index].Center = _hexagonSprites[i].transform.position;
 
             matchList = new HashSet<PlacedHexagon>();
-            for (var j = 0; j < _hexagonSprites.Count; j++)
+            for (var i = 0; i < _hexagonSprites.Count; i++)
             {
-                var position = _hexagonSprites[j].transform.position;
-                var neighbors = NeighborHood.GetNeighbors(position, _placedHexagons, _grid);
-                var color = _hexagonSprites[j].GetComponent<SpriteRenderer>().color;
+                var position = _hexagonSprites[i].transform.position;
+                var neighbors = NeighborHood.GetNeighbors(position, tempPlacedHexagons, _grid);
+                var color = _hexagonSprites[i].GetComponent<SpriteRenderer>().color;
                 for (var index = 0; index < neighbors.Count; index++)
                 {
                     if (!neighbors[index].Hexagon.color.Equals(color)) continue;
+
                     int previousIndex = index == 0 ? neighbors.Count - 1 : index - 1;
-                    int nextIndex = index == neighbors.Count - 1 ? 0 : index + 1;
                     if (neighbors[previousIndex].Hexagon.color.Equals(color))
                     {
-                        if (Vector3.Distance(neighbors[previousIndex].Center, neighbors[index].Center) < 1.5f)
+                        float distance = Vector3.Distance(neighbors[previousIndex].Center, neighbors[index].Center);
+                        if (distance <= _grid.cellSize.x)
                         {
-                            matchList.Add(_hexagonSprites[j].GetComponent<HexagonSprite>().Hexagon);
+                            matchList.Add(_hexagonSprites[i].GetComponent<HexagonSprite>().Hexagon);
                             matchList.Add(neighbors[index]);
                             matchList.Add(neighbors[previousIndex]);
                         }
                     }
 
+                    int nextIndex = index == neighbors.Count - 1 ? 0 : index + 1;
                     if (neighbors[nextIndex].Hexagon.color.Equals(color))
                     {
-                        if (Vector3.Distance(neighbors[nextIndex].Center, neighbors[index].Center) < 1.5f)
+                        float distance = Vector3.Distance(neighbors[nextIndex].Center, neighbors[index].Center);
+                        if (distance <= _grid.cellSize.x)
                         {
-                            matchList.Add(_hexagonSprites[j].GetComponent<HexagonSprite>().Hexagon);
+                            matchList.Add(_hexagonSprites[i].GetComponent<HexagonSprite>().Hexagon);
                             matchList.Add(neighbors[index]);
                             matchList.Add(neighbors[nextIndex]);
                         }
@@ -174,13 +169,9 @@ namespace HexagonMusapKahraman.Core
                 }
             }
 
-
-            foreach (var placedHexagon in matchList)
-            {
-                Debug.Log(placedHexagon.Center);
-            }
-
-            return matchList.Count > 2;
+            if (matchList.Count <= 2) return false;
+            _gridBuilder.SetPlacement(tempPlacedHexagons);
+            return true;
         }
     }
 }

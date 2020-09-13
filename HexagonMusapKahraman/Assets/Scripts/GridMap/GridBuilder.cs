@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using HexagonMusapKahraman.Core;
 using HexagonMusapKahraman.ScriptableObjects;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -9,9 +10,9 @@ namespace HexagonMusapKahraman.GridMap
     public class GridBuilder : MonoBehaviour
     {
         [SerializeField] private List<Hexagon> hexagons;
-        private readonly List<PlacedHexagon> _placedHexagons = new List<PlacedHexagon>();
         private Grid _grid;
         private Vector2 _gridSize;
+        private List<PlacedHexagon> _placedHexagons = new List<PlacedHexagon>();
         private Tilemap _tilemap;
 
         private void Awake()
@@ -28,6 +29,22 @@ namespace HexagonMusapKahraman.GridMap
             foreach (var hexagon in hexagons) hashSet.Add(hexagon);
         }
 
+        public List<PlacedHexagon> GetPlacement()
+        {
+            return new List<PlacedHexagon>(_placedHexagons);
+        }
+
+        public void SetPlacement(IEnumerable<PlacedHexagon> placedHexagons)
+        {
+            _placedHexagons = new List<PlacedHexagon>(placedHexagons);
+            _tilemap.ClearAllTiles();
+            foreach (var placedHexagon in _placedHexagons)
+            {
+                var tile = CreateTile(placedHexagon.Hexagon);
+                _tilemap.SetTile(_grid.WorldToCell(placedHexagon.Center), tile);
+            }
+        }
+
         private void SetInitialMap()
         {
             for (var columnIndex = 0; columnIndex < _gridSize.x; columnIndex++)
@@ -41,28 +58,22 @@ namespace HexagonMusapKahraman.GridMap
                         hexagon = hexagons[Random.Range(0, hexagons.Count)];
 
                 var tile = CreateTile(hexagon);
-                PlaceHexagon(rowIndex, columnIndex, tile, hexagon);
+                PlaceHexagon(position, tile, hexagon);
             }
 
-            Tile CreateTile(Hexagon hexagon)
+            void PlaceHexagon(Vector3Int position, TileBase tile, Hexagon hexagon)
             {
-                var tile = ScriptableObject.CreateInstance<Tile>();
-                tile.sprite = hexagon.tile.sprite;
-                tile.color = hexagon.color;
-                return tile;
-            }
-
-            void PlaceHexagon(int rowIndex, int columnIndex, TileBase tile, Hexagon hexagon)
-            {
-                var position = new Vector3Int(rowIndex, columnIndex, 0);
                 _tilemap.SetTile(position, tile);
-                _placedHexagons.Add(new PlacedHexagon {Hexagon = hexagon, Center = _grid.GetCellCenterWorld(position)});
+                _placedHexagons.Add(new PlacedHexagon(hexagon, _grid.GetCellCenterWorld(position)));
             }
         }
 
-        public List<PlacedHexagon> GetPlacement()
+        private static Tile CreateTile(Hexagon hexagon)
         {
-            return new List<PlacedHexagon>(_placedHexagons);
+            var tile = ScriptableObject.CreateInstance<Tile>();
+            tile.sprite = hexagon.tile.sprite;
+            tile.color = hexagon.color;
+            return tile;
         }
     }
 }
