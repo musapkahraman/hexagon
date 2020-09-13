@@ -30,19 +30,33 @@ namespace HexagonMusapKahraman.GridMap
 
         private void SetInitialMap()
         {
-            for (var x = 0; x < _gridSize.y; x++)
-            for (var y = 0; y < _gridSize.x; y++)
+            for (var columnIndex = 0; columnIndex < _gridSize.x; columnIndex++)
+            for (var rowIndex = 0; rowIndex < _gridSize.y; rowIndex++)
             {
+                var position = new Vector3Int(rowIndex, columnIndex, 0);
+                var cellCenter = _grid.GetCellCenterWorld(position);
                 var hexagon = hexagons[Random.Range(0, hexagons.Count)];
+                if (NeighborHood.GetBottomLeftNeighbor(cellCenter, _placedHexagons, _grid, out var neighbor))
+                    while (neighbor.Hexagon.color.Equals(hexagon.color))
+                        hexagon = hexagons[Random.Range(0, hexagons.Count)];
+
+                var tile = CreateTile(hexagon);
+                PlaceHexagon(rowIndex, columnIndex, tile, hexagon);
+            }
+
+            Tile CreateTile(Hexagon hexagon)
+            {
                 var tile = ScriptableObject.CreateInstance<Tile>();
                 tile.sprite = hexagon.tile.sprite;
                 tile.color = hexagon.color;
-                var position = new Vector3Int(x, y, 0);
+                return tile;
+            }
+
+            void PlaceHexagon(int rowIndex, int columnIndex, TileBase tile, Hexagon hexagon)
+            {
+                var position = new Vector3Int(rowIndex, columnIndex, 0);
                 _tilemap.SetTile(position, tile);
-                _placedHexagons.Add(new PlacedHexagon
-                {
-                    Hexagon = hexagon, Center = _grid.GetCellCenterWorld(position)
-                });
+                _placedHexagons.Add(new PlacedHexagon {Hexagon = hexagon, Center = _grid.GetCellCenterWorld(position)});
             }
         }
 
