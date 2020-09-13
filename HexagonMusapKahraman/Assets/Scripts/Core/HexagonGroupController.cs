@@ -21,7 +21,6 @@ namespace HexagonMusapKahraman.Core
         public void ShowAtCenter(Vector3 center, IEnumerable<PlacedHexagon> neighbors)
         {
             ClearInstantiatedObjects();
-
             _rotatingParent = Instantiate(rotatingParentPrefab, center, Quaternion.identity);
             foreach (var placedHexagon in neighbors)
             {
@@ -48,27 +47,38 @@ namespace HexagonMusapKahraman.Core
             {
                 case RotationDirection.Clockwise:
                     _rotatingParent.transform.DORotate(120 * Vector3.back, 0.3f, RotateMode.LocalAxisAdd)
-                        .OnComplete(Check);
+                        .OnComplete(OnRotationCompleted);
                     _isAlreadyRotating = true;
                     break;
                 case RotationDirection.AntiClockwise:
                     _rotatingParent.transform.DORotate(120 * Vector3.forward, 0.3f, RotateMode.LocalAxisAdd)
-                        .OnComplete(Check);
+                        .OnComplete(OnRotationCompleted);
                     _isAlreadyRotating = true;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
             }
 
-            void Check()
+            void OnRotationCompleted()
             {
                 if (_rotationCheckCounter < 2)
                 {
                     _rotationCheckCounter++;
-                    Debug.Log("Check!");
+                    if (CheckForMatch())
+                    {
+                        ResetGateKeepers();
+                        ClearInstantiatedObjects();
+                        return;
+                    }
+
                     Rotate(direction);
                 }
                 else
+                {
+                    ResetGateKeepers();
+                }
+
+                void ResetGateKeepers()
                 {
                     _rotationCheckCounter = 0;
                     _isAlreadyRotating = false;
@@ -83,6 +93,11 @@ namespace HexagonMusapKahraman.Core
             _hexagonSprites.Clear();
             foreach (var o in _hexagonSpriteMasks) Destroy(o);
             _hexagonSpriteMasks.Clear();
+        }
+
+        private bool CheckForMatch()
+        {
+            return false;
         }
     }
 }
