@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using HexagonMusapKahraman.Gestures;
 using HexagonMusapKahraman.GridMap;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HexagonMusapKahraman.Core
 {
@@ -12,6 +14,7 @@ namespace HexagonMusapKahraman.Core
         [SerializeField] private GameObject rotatingParentPrefab;
         [SerializeField] private GameObject hexagonSpritePrefab;
         [SerializeField] private GameObject hexagonSpriteMaskPrefab;
+        [SerializeField] private ParticleSystem particles;
         private readonly List<GameObject> _hexagonSpriteMasks = new List<GameObject>();
         private readonly List<GameObject> _hexagonSprites = new List<GameObject>();
         private Grid _grid;
@@ -29,10 +32,11 @@ namespace HexagonMusapKahraman.Core
 
         public void ShowAtCenter(Vector3 center, IEnumerable<PlacedHexagon> neighbors)
         {
+            if (_isAlreadyRotating) return;
+
             ClearInstantiatedObjects();
 
             _placedHexagons = _gridBuilder.GetPlacement();
-
             _rotatingParent = Instantiate(rotatingParentPrefab, center, Quaternion.identity);
             foreach (var placedHexagon in neighbors)
             {
@@ -79,8 +83,24 @@ namespace HexagonMusapKahraman.Core
                 if (_rotationCheckCounter < 2)
                 {
                     _rotationCheckCounter++;
-                    if (CheckForMatch())
+                    if (CheckForMatch(out var matchList))
                     {
+                        var sumX = 0f;
+                        var sumY = 0f;
+                        var color = Color.white;
+                        foreach (var hexagon in matchList)
+                        {
+                            sumX += hexagon.Center.x;
+                            sumY += hexagon.Center.y;
+                            
+                            Instantiate(hexagonSpriteMaskPrefab, hexagon.Center, Quaternion.identity);
+                            color = hexagon.Hexagon.color;
+                        }
+
+                        particles.transform.position = new Vector3(sumX / matchList.Count, sumY/ matchList.Count);
+                        var main = particles.main;
+                        main.startColor = color;
+                        particles.Play();
                         ResetGateKeepers();
                         ClearInstantiatedObjects();
                         return;
@@ -110,7 +130,7 @@ namespace HexagonMusapKahraman.Core
             _hexagonSpriteMasks.Clear();
         }
 
-        private bool CheckForMatch()
+        private bool CheckForMatch(out HashSet<PlacedHexagon> matchList)
         {
             // for (var j = 0; j < _hexagonSprites.Count; j++)
             // {
@@ -121,7 +141,7 @@ namespace HexagonMusapKahraman.Core
             //     });
             // }
 
-            var matchList = new HashSet<PlacedHexagon>();
+            matchList = new HashSet<PlacedHexagon>();
             for (var j = 0; j < _hexagonSprites.Count; j++)
             {
                 var position = _hexagonSprites[j].transform.position;
