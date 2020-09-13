@@ -7,6 +7,6 @@ namespace HexagonMusapKahraman.ScriptableObjects
     public class Hexagon : ScriptableObject
     {
         public Tile tile;
-        public Color32 color;
+        public Color color;
     }
 }

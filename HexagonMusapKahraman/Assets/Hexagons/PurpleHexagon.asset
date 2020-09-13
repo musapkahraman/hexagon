@@ -13,6 +13,4 @@ MonoBehaviour:
   m_Name: PurpleHexagon
   m_EditorClassIdentifier: 
   tile: {fileID: 11400000, guid: 899c4cdf3b6961644a398160e05af601, type: 2}
-  color:
-    serializedVersion: 2
-    rgba: 4291457714
+  color: {r: 0.7684097, g: 0, b: 1, a: 1}

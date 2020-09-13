@@ -35,7 +35,7 @@ namespace HexagonMusapKahraman.GridMap
             return neighbors;
         }
 
-        public static IEnumerable<PlacedHexagon> GetNeighbors(Vector3 cellCenterWorld, List<PlacedHexagon> hexagons,
+        public static List<PlacedHexagon> GetNeighbors(Vector3 cellCenterWorld, List<PlacedHexagon> hexagons,
             Grid grid)
         {
             var cellSize = grid.cellSize;

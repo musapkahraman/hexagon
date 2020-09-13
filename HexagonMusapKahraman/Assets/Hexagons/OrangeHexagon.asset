@@ -13,6 +13,4 @@ MonoBehaviour:
   m_Name: OrangeHexagon
   m_EditorClassIdentifier: 
   tile: {fileID: 11400000, guid: 899c4cdf3b6961644a398160e05af601, type: 2}
-  color:
-    serializedVersion: 2
-    rgba: 4278235389
+  color: {r: 1, g: 0.57569367, b: 0, a: 1}
