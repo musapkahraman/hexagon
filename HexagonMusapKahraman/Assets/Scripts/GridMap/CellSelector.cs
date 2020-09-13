@@ -77,7 +77,7 @@ namespace HexagonMusapKahraman.GridMap
 
         private void OnRotated(RotationDirection direction)
         {
-            _groupController.Rotate(direction);
+            _groupController.RotateSelectedHexagonGroup(direction);
         }
     }
 }

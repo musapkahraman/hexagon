@@ -16,6 +16,7 @@ namespace HexagonMusapKahraman.Core
         private readonly List<GameObject> _hexagonSprites = new List<GameObject>();
         private GameObject _rotatingParent;
         private int _rotationCheckCounter;
+        private bool _isAlreadyRotating;
 
         public void ShowAtCenter(Vector3 center, IEnumerable<PlacedHexagon> neighbors)
         {
@@ -34,7 +35,13 @@ namespace HexagonMusapKahraman.Core
             }
         }
 
-        public void Rotate(RotationDirection direction)
+        public void RotateSelectedHexagonGroup(RotationDirection direction)
+        {
+            if (_isAlreadyRotating) return;
+            Rotate(direction);
+        }
+
+        private void Rotate(RotationDirection direction)
         {
             if (_rotatingParent == null) return;
             switch (direction)
@@ -42,10 +49,12 @@ namespace HexagonMusapKahraman.Core
                 case RotationDirection.Clockwise:
                     _rotatingParent.transform.DORotate(120 * Vector3.back, 0.3f, RotateMode.LocalAxisAdd)
                         .OnComplete(Check);
+                    _isAlreadyRotating = true;
                     break;
                 case RotationDirection.AntiClockwise:
                     _rotatingParent.transform.DORotate(120 * Vector3.forward, 0.3f, RotateMode.LocalAxisAdd)
                         .OnComplete(Check);
+                    _isAlreadyRotating = true;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
@@ -62,6 +71,7 @@ namespace HexagonMusapKahraman.Core
                 else
                 {
                     _rotationCheckCounter = 0;
+                    _isAlreadyRotating = false;
                 }
             }
         }
