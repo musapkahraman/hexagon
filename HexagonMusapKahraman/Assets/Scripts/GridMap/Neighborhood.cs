@@ -1,9 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using HexagonMusapKahraman.Core;
 using UnityEngine;
 
 namespace HexagonMusapKahraman.GridMap
 {
+    public enum NeighborType
+    {
+        Top,
+        BottomLeft
+    }
+
     public static class NeighborHood
     {
         public static List<PlacedHexagon> GetNeighbors(Vector3 point, List<PlacedHexagon> hexagons, int count)
@@ -62,13 +69,25 @@ namespace HexagonMusapKahraman.GridMap
             return neighbors;
         }
 
-        public static bool GetBottomLeftNeighbor(Vector3 cellCenterWorld, List<PlacedHexagon> hexagons, Grid grid,
-            out PlacedHexagon neighbor)
+        public static bool GetNeighbor(Vector3 cellCenterWorld, List<PlacedHexagon> hexagons, Grid grid,
+            NeighborType neighborType, out PlacedHexagon neighbor)
         {
             var cellSize = grid.cellSize;
             float height = cellSize.x;
             float width = cellSize.y * 0.8f;
-            var neighborWorldPoint = cellCenterWorld + new Vector3(-width, -height * 0.5f, 0);
+            Vector3 neighborWorldPoint;
+            switch (neighborType)
+            {
+                case NeighborType.Top:
+                    neighborWorldPoint = cellCenterWorld + new Vector3(0, height, 0);
+                    break;
+                case NeighborType.BottomLeft:
+                    neighborWorldPoint = cellCenterWorld + new Vector3(-width, -height * 0.5f, 0);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(neighborType), neighborType, null);
+            }
+
             var neighborCell = grid.WorldToCell(neighborWorldPoint);
             var neighborCenterPoint = grid.GetCellCenterWorld(neighborCell);
 

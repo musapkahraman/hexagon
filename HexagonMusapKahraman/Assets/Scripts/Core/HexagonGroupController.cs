@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using HexagonMusapKahraman.Gestures;
 using HexagonMusapKahraman.GridMap;
@@ -9,6 +10,7 @@ namespace HexagonMusapKahraman.Core
 {
     public class HexagonGroupController : MonoBehaviour
     {
+        [SerializeField] private GameObject debugSprite;
         [SerializeField] private GameObject rotatingParentPrefab;
         [SerializeField] private GameObject hexagonSpritePrefab;
         [SerializeField] private GameObject hexagonSpriteMaskPrefab;
@@ -155,9 +157,30 @@ namespace HexagonMusapKahraman.Core
             }
 
             if (matchList.Count <= 2) return false;
-            foreach (var hexagon in matchList) tempPlacedHexagons.Remove(hexagon);
-            _gridBuilder.SetPlacement(tempPlacedHexagons);
+            ReplaceMatchedTiles(matchList, tempPlacedHexagons);
             return true;
+        }
+
+        private void ReplaceMatchedTiles(HashSet<PlacedHexagon> matchList, List<PlacedHexagon> tempPlacedHexagons)
+        {
+            var hexesAboveMatches = (from tempPlacedHexagon in tempPlacedHexagons
+                from matchedHexagon in matchList
+                where Math.Abs(tempPlacedHexagon.Center.x - matchedHexagon.Center.x) < _grid.cellSize.y * 0.5f &&
+                      tempPlacedHexagon.Center.y >= matchedHexagon.Center.y
+                select tempPlacedHexagon).ToList();
+
+            foreach (var hexagon in matchList)
+            {
+                tempPlacedHexagons.Remove(hexagon);
+                hexesAboveMatches.RemoveAll(placedHexagon => placedHexagon.Center == hexagon.Center);
+            }
+
+            foreach (var hexAboveMatches in hexesAboveMatches)
+            {
+                Instantiate(debugSprite, hexAboveMatches.Center, Quaternion.identity);
+            }
+
+            _gridBuilder.SetPlacement(tempPlacedHexagons);
         }
 
         private void PopMatchedTilesOut(ICollection<PlacedHexagon> matchList)

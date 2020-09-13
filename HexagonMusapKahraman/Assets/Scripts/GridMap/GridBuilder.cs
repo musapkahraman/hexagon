@@ -53,7 +53,8 @@ namespace HexagonMusapKahraman.GridMap
                 var position = new Vector3Int(rowIndex, columnIndex, 0);
                 var cellCenter = _grid.GetCellCenterWorld(position);
                 var hexagon = hexagons[Random.Range(0, hexagons.Count)];
-                if (NeighborHood.GetBottomLeftNeighbor(cellCenter, _placedHexagons, _grid, out var neighbor))
+                if (NeighborHood.GetNeighbor(cellCenter, _placedHexagons, _grid, NeighborType.BottomLeft,
+                    out var neighbor))
                     while (neighbor.Hexagon.color.Equals(hexagon.color))
                         hexagon = hexagons[Random.Range(0, hexagons.Count)];
 

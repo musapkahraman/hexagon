@@ -2448,6 +2448,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4bc469838aa6a14594ca82ff4084334, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugSprite: {fileID: 3735253388757708301, guid: 0c1474304acfb4d44a3a29643f1b8d4c, type: 3}
   rotatingParentPrefab: {fileID: 5616547374859051558, guid: 445ad7cbe8d27674191e6a6ed5ddd7a4, type: 3}
   hexagonSpritePrefab: {fileID: 8571303736162427257, guid: 26f639d56a26e8a45b80dd903987a303, type: 3}
   hexagonSpriteMaskPrefab: {fileID: 55264236124760082, guid: 087f63c0b1457044cb772a9127f87d8c, type: 3}
