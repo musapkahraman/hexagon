@@ -1,9 +1,8 @@
-﻿using HexagonMusapKahraman.GridMap;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace HexagonMusapKahraman.Core
 {
-    public class HexagonSprite : MonoBehaviour
+    public class HexagonRelation : MonoBehaviour
     {
         public PlacedHexagon Hexagon;
 

@@ -16,7 +16,7 @@ namespace HexagonMusapKahraman.Core
         [SerializeField] private GameObject hexagonSpriteMaskPrefab;
         [SerializeField] private ParticleSystem particles;
         private readonly List<GameObject> _hexagonSpriteMasks = new List<GameObject>();
-        private readonly List<GameObject> _hexagonSprites = new List<GameObject>();
+        private readonly List<GameObject> _rotatingHexagonSprites = new List<GameObject>();
         private Grid _grid;
         private GridBuilder _gridBuilder;
         private bool _isAlreadyRotating;
@@ -38,15 +38,30 @@ namespace HexagonMusapKahraman.Core
             _rotatingParent = Instantiate(rotatingParentPrefab, center, Quaternion.identity);
             foreach (var placedHexagon in neighbors)
             {
-                var hexagonSprite = Instantiate(hexagonSpritePrefab, placedHexagon.Center, Quaternion.identity);
-                hexagonSprite.GetComponent<SpriteRenderer>().color = placedHexagon.Hexagon.color;
-                hexagonSprite.GetComponent<HexagonSprite>().Hexagon = placedHexagon;
+                var hexagonSprite = BuildHexagonSprite(placedHexagon);
                 hexagonSprite.transform.parent = _rotatingParent.transform;
-                _hexagonSprites.Add(hexagonSprite);
+                _rotatingHexagonSprites.Add(hexagonSprite);
 
                 var hexagonSpriteMask = Instantiate(hexagonSpriteMaskPrefab, placedHexagon.Center, Quaternion.identity);
                 _hexagonSpriteMasks.Add(hexagonSpriteMask);
             }
+        }
+
+        private void ClearInstantiatedObjects()
+        {
+            if (_rotatingParent != null) Destroy(_rotatingParent);
+            foreach (var o in _rotatingHexagonSprites) Destroy(o);
+            _rotatingHexagonSprites.Clear();
+            foreach (var o in _hexagonSpriteMasks) Destroy(o);
+            _hexagonSpriteMasks.Clear();
+        }
+
+        private GameObject BuildHexagonSprite(PlacedHexagon placedHexagon)
+        {
+            var hexagonSprite = Instantiate(hexagonSpritePrefab, placedHexagon.Center, Quaternion.identity);
+            hexagonSprite.GetComponent<SpriteRenderer>().color = placedHexagon.Hexagon.color;
+            hexagonSprite.GetComponent<HexagonRelation>().Hexagon = placedHexagon;
+            return hexagonSprite;
         }
 
         public void RotateSelectedHexagonGroup(RotationDirection direction)
@@ -103,61 +118,66 @@ namespace HexagonMusapKahraman.Core
             }
         }
 
-        private void ClearInstantiatedObjects()
+        private void PopMatchedTilesOut(ICollection<PlacedHexagon> matchList)
         {
-            if (_rotatingParent != null) Destroy(_rotatingParent);
-            foreach (var o in _hexagonSprites) Destroy(o);
-            _hexagonSprites.Clear();
-            foreach (var o in _hexagonSpriteMasks) Destroy(o);
-            _hexagonSpriteMasks.Clear();
+            var sumX = 0f;
+            var sumY = 0f;
+            var color = Color.white;
+            foreach (var hexagon in matchList)
+            {
+                sumX += hexagon.Center.x;
+                sumY += hexagon.Center.y;
+                color = hexagon.Hexagon.color;
+            }
+
+            particles.transform.position = new Vector3(sumX / matchList.Count, sumY / matchList.Count);
+            var main = particles.main;
+            main.startColor = color;
+            particles.Play();
         }
 
         private bool CheckForMatch(out HashSet<PlacedHexagon> matchList)
         {
-            var tempPlacedHexagons = _gridBuilder.GetPlacement();
-            for (var i = 0; i < _hexagonSprites.Count; i++)
-            for (var index = 0; index < tempPlacedHexagons.Count; index++)
-                if (tempPlacedHexagons[index].Equals(_hexagonSprites[i].GetComponent<HexagonSprite>().Hexagon))
-                    tempPlacedHexagons[index].Center = _hexagonSprites[i].transform.position;
+            var placedHexagons = _gridBuilder.GetPlacement();
 
+            // Reflect sprite's movement to the related hexagon.
+            foreach (var sprite in _rotatingHexagonSprites)
+            foreach (var placedHexagon in placedHexagons.Where(gridTile =>
+                gridTile.Equals(sprite.GetComponent<HexagonRelation>().Hexagon)))
+                placedHexagon.Center = sprite.transform.position;
+
+            // Compare colors of each sprite with its surrounding tiles' colors.
             matchList = new HashSet<PlacedHexagon>();
-            for (var i = 0; i < _hexagonSprites.Count; i++)
+            foreach (var sprite in _rotatingHexagonSprites)
             {
-                var position = _hexagonSprites[i].transform.position;
-                var neighbors = NeighborHood.GetNeighbors(position, tempPlacedHexagons, _grid);
-                var color = _hexagonSprites[i].GetComponent<SpriteRenderer>().color;
-                for (var index = 0; index < neighbors.Count; index++)
+                var self = sprite.GetComponent<HexagonRelation>().Hexagon;
+                var spriteColor = sprite.GetComponent<SpriteRenderer>().color;
+                var spritePosition = sprite.transform.position;
+                var neighbors = NeighborHood.GetNeighbors(spritePosition, placedHexagons, _grid);
+                for (var i = 0; i < neighbors.Count; i++)
                 {
-                    if (!neighbors[index].Hexagon.color.Equals(color)) continue;
-
-                    int previousIndex = index == 0 ? neighbors.Count - 1 : index - 1;
-                    if (neighbors[previousIndex].Hexagon.color.Equals(color))
-                    {
-                        float distance = Vector3.Distance(neighbors[previousIndex].Center, neighbors[index].Center);
-                        if (distance <= _grid.cellSize.x)
-                        {
-                            matchList.Add(_hexagonSprites[i].GetComponent<HexagonSprite>().Hexagon);
-                            matchList.Add(neighbors[index]);
-                            matchList.Add(neighbors[previousIndex]);
-                        }
-                    }
-
-                    int nextIndex = index == neighbors.Count - 1 ? 0 : index + 1;
-                    if (neighbors[nextIndex].Hexagon.color.Equals(color))
-                    {
-                        float distance = Vector3.Distance(neighbors[nextIndex].Center, neighbors[index].Center);
-                        if (distance <= _grid.cellSize.x)
-                        {
-                            matchList.Add(_hexagonSprites[i].GetComponent<HexagonSprite>().Hexagon);
-                            matchList.Add(neighbors[index]);
-                            matchList.Add(neighbors[nextIndex]);
-                        }
-                    }
+                    if (!neighbors[i].Hexagon.color.Equals(spriteColor)) continue;
+                    int previousIndex = i == 0 ? neighbors.Count - 1 : i - 1;
+                    CheckForThreeMatch(spriteColor, self, neighbors[i], neighbors[previousIndex], matchList);
+                    int nextIndex = i == neighbors.Count - 1 ? 0 : i + 1;
+                    CheckForThreeMatch(spriteColor, self, neighbors[i], neighbors[nextIndex], matchList);
                 }
             }
 
+            void CheckForThreeMatch(Color color, PlacedHexagon self, PlacedHexagon neighbor,
+                PlacedHexagon secondNeighbor, ISet<PlacedHexagon> list)
+            {
+                if (!secondNeighbor.Hexagon.color.Equals(color)) return;
+                float distance = Vector3.Distance(secondNeighbor.Center, neighbor.Center);
+                if (!(distance <= 1)) return;
+                list.Add(self);
+                list.Add(neighbor);
+                list.Add(secondNeighbor);
+            }
+
             if (matchList.Count <= 2) return false;
-            FillHoles(matchList, tempPlacedHexagons);
+
+            FillHoles(matchList, placedHexagons);
             return true;
         }
 
@@ -227,9 +247,7 @@ namespace HexagonMusapKahraman.Core
                     var targetCenter = hexAboveMatches.Center + distanceToDescend * Vector3.down;
 
                     // Create sprites to be animated
-                    var hexagonSprite = Instantiate(hexagonSpritePrefab, hexAboveMatches.Center, Quaternion.identity);
-                    hexagonSprite.GetComponent<SpriteRenderer>().color = hexAboveMatches.Hexagon.color;
-                    hexagonSprite.GetComponent<HexagonSprite>().Hexagon = hexAboveMatches;
+                    var hexagonSprite = BuildHexagonSprite(hexAboveMatches);
                     hexagonSprite.transform.DOMove(targetCenter, matchCountPerColumn * 0.25f).SetEase(Ease.InSine)
                         .OnComplete(() =>
                         {
@@ -244,25 +262,8 @@ namespace HexagonMusapKahraman.Core
             }
 
             _gridBuilder.SetPlacement(tempPlacedHexagons);
+
             foreach (var hexagon in _gridBuilder.GetComplementaryHexagons()) Debug.Log(hexagon.Center);
-        }
-
-        private void PopMatchedTilesOut(ICollection<PlacedHexagon> matchList)
-        {
-            var sumX = 0f;
-            var sumY = 0f;
-            var color = Color.white;
-            foreach (var hexagon in matchList)
-            {
-                sumX += hexagon.Center.x;
-                sumY += hexagon.Center.y;
-                color = hexagon.Hexagon.color;
-            }
-
-            particles.transform.position = new Vector3(sumX / matchList.Count, sumY / matchList.Count);
-            var main = particles.main;
-            main.startColor = color;
-            particles.Play();
         }
     }
 }
