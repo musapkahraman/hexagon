@@ -98,7 +98,7 @@ namespace HexagonMusapKahraman.Core
                 else
                 {
                     _rotationCheckCounter++;
-                    if (!CheckForMatch(out var matchList))
+                    if (!CheckRotatingSpritesForMatch(out var matchList))
                     {
                         Rotate(direction);
                     }
@@ -136,7 +136,7 @@ namespace HexagonMusapKahraman.Core
             particles.Play();
         }
 
-        private bool CheckForMatch(out HashSet<PlacedHexagon> matchList)
+        private bool CheckRotatingSpritesForMatch(out HashSet<PlacedHexagon> matchList)
         {
             var placedHexagons = _gridBuilder.GetPlacement();
 
@@ -149,31 +149,7 @@ namespace HexagonMusapKahraman.Core
             // Compare colors of each sprite with its surrounding tiles' colors.
             matchList = new HashSet<PlacedHexagon>();
             foreach (var sprite in _rotatingHexagonSprites)
-            {
-                var self = sprite.GetComponent<HexagonRelation>().Hexagon;
-                var spriteColor = sprite.GetComponent<SpriteRenderer>().color;
-                var spritePosition = sprite.transform.position;
-                var neighbors = NeighborHood.GetNeighbors(spritePosition, placedHexagons, _grid);
-                for (var i = 0; i < neighbors.Count; i++)
-                {
-                    if (!neighbors[i].Hexagon.color.Equals(spriteColor)) continue;
-                    int previousIndex = i == 0 ? neighbors.Count - 1 : i - 1;
-                    CheckForThreeMatch(spriteColor, self, neighbors[i], neighbors[previousIndex], matchList);
-                    int nextIndex = i == neighbors.Count - 1 ? 0 : i + 1;
-                    CheckForThreeMatch(spriteColor, self, neighbors[i], neighbors[nextIndex], matchList);
-                }
-            }
-
-            void CheckForThreeMatch(Color color, PlacedHexagon self, PlacedHexagon neighbor,
-                PlacedHexagon secondNeighbor, ISet<PlacedHexagon> list)
-            {
-                if (!secondNeighbor.Hexagon.color.Equals(color)) return;
-                float distance = Vector3.Distance(secondNeighbor.Center, neighbor.Center);
-                if (!(distance <= 1)) return;
-                list.Add(self);
-                list.Add(neighbor);
-                list.Add(secondNeighbor);
-            }
+                sprite.GetComponent<HexagonRelation>().Hexagon.CheckForThreeMatch(_grid, placedHexagons, matchList);
 
             if (matchList.Count <= 2) return false;
 
