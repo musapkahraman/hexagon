@@ -157,30 +157,94 @@ namespace HexagonMusapKahraman.Core
             }
 
             if (matchList.Count <= 2) return false;
-            ReplaceMatchedTiles(matchList, tempPlacedHexagons);
+            FillHoles(matchList, tempPlacedHexagons);
             return true;
         }
 
-        private void ReplaceMatchedTiles(HashSet<PlacedHexagon> matchList, List<PlacedHexagon> tempPlacedHexagons)
+        private void FillHoles(HashSet<PlacedHexagon> matchList, ICollection<PlacedHexagon> tempPlacedHexagons)
         {
+            // Filter hexagons to the columns (above and including the matched hexagons)
             var hexesAboveMatches = (from tempPlacedHexagon in tempPlacedHexagons
                 from matchedHexagon in matchList
                 where Math.Abs(tempPlacedHexagon.Center.x - matchedHexagon.Center.x) < _grid.cellSize.y * 0.5f &&
                       tempPlacedHexagon.Center.y >= matchedHexagon.Center.y
                 select tempPlacedHexagon).ToList();
 
+            // Eliminate duplicates
+            var set = new HashSet<PlacedHexagon>(hexesAboveMatches);
+            hexesAboveMatches = new List<PlacedHexagon>(set);
+
+            // Order the filtered list by height
+            hexesAboveMatches = hexesAboveMatches.OrderBy(hexagon => hexagon.Center.y).ToList();
+
+            // Separate them by columns
+            var columns = new Dictionary<int, List<PlacedHexagon>>();
+            foreach (var hex in hexesAboveMatches)
+            {
+                int key = _grid.WorldToCell(hex.Center).y;
+                if (columns.ContainsKey(key)) columns[key].Add(hex);
+                else columns.Add(key, new List<PlacedHexagon> {hex});
+            }
+
+            // Number of hexagon matches per column
+            var matchCountPerColumns = new Dictionary<int, int>();
+            foreach (var hex in from hex in hexesAboveMatches
+                from match in matchList
+                where hex.Center == match.Center
+                select hex)
+            {
+                int key = _grid.WorldToCell(hex.Center).y;
+                if (matchCountPerColumns.ContainsKey(key)) matchCountPerColumns[key]++;
+                else matchCountPerColumns.Add(key, 1);
+            }
+
+            // Place masks over them
+            var masks = new Dictionary<int, List<GameObject>>();
+            foreach (var hex in hexesAboveMatches)
+            {
+                int key = _grid.WorldToCell(hex.Center).y;
+                var mask = Instantiate(hexagonSpriteMaskPrefab, hex.Center, Quaternion.identity);
+                if (masks.ContainsKey(key)) masks[key].Add(mask);
+                else masks.Add(key, new List<GameObject> {mask});
+            }
+
+            // Remove matched hexagons from the filtered list
             foreach (var hexagon in matchList)
             {
                 tempPlacedHexagons.Remove(hexagon);
                 hexesAboveMatches.RemoveAll(placedHexagon => placedHexagon.Center == hexagon.Center);
+                foreach (var column in columns)
+                    column.Value.RemoveAll(placedHexagon => placedHexagon.Center == hexagon.Center);
             }
 
-            foreach (var hexAboveMatches in hexesAboveMatches)
+
+            foreach (var column in columns)
             {
-                Instantiate(debugSprite, hexAboveMatches.Center, Quaternion.identity);
+                int matchCountPerColumn = matchCountPerColumns[column.Key];
+                float distanceToDescend = matchCountPerColumn * _grid.cellSize.x;
+                foreach (var hexAboveMatches in column.Value)
+                {
+                    var targetCenter = hexAboveMatches.Center + distanceToDescend * Vector3.down;
+
+                    // Create sprites to be animated
+                    var hexagonSprite = Instantiate(hexagonSpritePrefab, hexAboveMatches.Center, Quaternion.identity);
+                    hexagonSprite.GetComponent<SpriteRenderer>().color = hexAboveMatches.Hexagon.color;
+                    hexagonSprite.GetComponent<HexagonSprite>().Hexagon = hexAboveMatches;
+                    hexagonSprite.transform.DOMove(targetCenter, matchCountPerColumn * 0.25f).SetEase(Ease.InSine)
+                        .OnComplete(() =>
+                        {
+                            Destroy(hexagonSprite);
+                            foreach (var o in masks[column.Key]) Destroy(o);
+                        });
+
+                    tempPlacedHexagons.Remove(hexAboveMatches);
+                    hexAboveMatches.Center = targetCenter;
+                    tempPlacedHexagons.Add(hexAboveMatches);
+                }
             }
 
             _gridBuilder.SetPlacement(tempPlacedHexagons);
+            foreach (var hexagon in _gridBuilder.GetComplementaryHexagons()) Debug.Log(hexagon.Center);
         }
 
         private void PopMatchedTilesOut(ICollection<PlacedHexagon> matchList)

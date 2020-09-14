@@ -47,6 +47,32 @@ namespace HexagonMusapKahraman.GridMap
             }
         }
 
+        public List<PlacedHexagon> GetComplementaryHexagons()
+        {
+            var complementaryHexagons = new List<PlacedHexagon>();
+            for (var columnIndex = 0; columnIndex < _gridSize.x; columnIndex++)
+            for (var rowIndex = 0; rowIndex < _gridSize.y; rowIndex++)
+            {
+                var position = new Vector3Int(rowIndex, columnIndex, 0);
+                var value = _placedHexagons.Find(placedHexagon => _grid.WorldToCell(placedHexagon.Center) == position);
+                if (value != null) continue;
+                var cellCenter = _grid.GetCellCenterWorld(position);
+                var hexagon = hexagons[Random.Range(0, hexagons.Count)];
+                if (NeighborHood.GetNeighbor(cellCenter, _placedHexagons, _grid, NeighborType.BottomLeft,
+                    out var neighbor))
+                    while (neighbor.Hexagon.color.Equals(hexagon.color))
+                        hexagon = hexagons[Random.Range(0, hexagons.Count)];
+
+                var tile = CreateTile(hexagon);
+                _tilemap.SetTile(position, tile);
+                var item = new PlacedHexagon(hexagon, _grid.GetCellCenterWorld(position));
+                complementaryHexagons.Add(item);
+                _placedHexagons.Add(item);
+            }
+
+            return complementaryHexagons;
+        }
+
         private void SetInitialMap()
         {
             for (var columnIndex = 0; columnIndex < _gridSize.x; columnIndex++)
@@ -61,11 +87,6 @@ namespace HexagonMusapKahraman.GridMap
                         hexagon = hexagons[Random.Range(0, hexagons.Count)];
 
                 var tile = CreateTile(hexagon);
-                PlaceHexagon(position, tile, hexagon);
-            }
-
-            void PlaceHexagon(Vector3Int position, TileBase tile, Hexagon hexagon)
-            {
                 _tilemap.SetTile(position, tile);
                 _placedHexagons.Add(new PlacedHexagon(hexagon, _grid.GetCellCenterWorld(position)));
             }

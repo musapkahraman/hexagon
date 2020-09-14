@@ -8,6 +8,7 @@ namespace HexagonMusapKahraman.GridMap
     public enum NeighborType
     {
         Top,
+        Down,
         BottomLeft
     }
 
@@ -81,6 +82,9 @@ namespace HexagonMusapKahraman.GridMap
                 case NeighborType.Top:
                     neighborWorldPoint = cellCenterWorld + new Vector3(0, height, 0);
                     break;
+                case NeighborType.Down:
+                    neighborWorldPoint = cellCenterWorld + new Vector3(0, -height, 0);
+                    break;
                 case NeighborType.BottomLeft:
                     neighborWorldPoint = cellCenterWorld + new Vector3(-width, -height * 0.5f, 0);
                     break;
@@ -99,7 +103,7 @@ namespace HexagonMusapKahraman.GridMap
                 return true;
             }
 
-            neighbor = new PlacedHexagon(null, Vector3.negativeInfinity);
+            neighbor = new PlacedHexagon(null, neighborWorldPoint);
             return false;
         }
     }
