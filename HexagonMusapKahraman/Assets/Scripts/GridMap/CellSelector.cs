@@ -66,12 +66,17 @@ namespace HexagonMusapKahraman.GridMap
             }
 
             _selectionCenter = new Vector3(sumX / selectionCount, sumY / selectionCount, 0);
-            _groupController.ShowAtCenter(_selectionCenter, neighbors);
+            _groupController.ShowRotatingGroupAtCenter(_selectionCenter, neighbors);
         }
 
         private void OnRotated(RotationDirection direction)
         {
             _groupController.RotateSelectedHexagonGroup(direction);
+        }
+
+        public int GetSelectionCount()
+        {
+            return selectionCount;
         }
     }
 }

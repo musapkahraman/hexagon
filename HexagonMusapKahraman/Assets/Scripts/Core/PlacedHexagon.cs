@@ -16,7 +16,7 @@ namespace HexagonMusapKahraman.Core
             Cell = cell;
         }
 
-        public void CheckForThreeMatch(Grid grid, List<PlacedHexagon> placedHexagons, ISet<PlacedHexagon> list)
+        public void CheckForMatch(Grid grid, List<PlacedHexagon> placedHexagons, ISet<PlacedHexagon> list)
         {
             var cellSize = grid.cellSize;
             float gridDistance = Mathf.Min(cellSize.x, cellSize.y) * 1.5f;
