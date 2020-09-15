@@ -15,6 +15,7 @@ namespace HexagonMusapKahraman.Core
         [SerializeField] private int scoreMultiplier = 5;
         [SerializeField] private int bombScoreInterval = 50;
         [SerializeField] private BombTimerController bombTimerController;
+        [SerializeField] private GameOverMessage gameOverMessage;
         [SerializeField] private DynamicData score;
         [SerializeField] private DynamicData move;
         [SerializeField] private DynamicData highScore;
@@ -49,6 +50,11 @@ namespace HexagonMusapKahraman.Core
                 var hexagonSprite = BuildHexagonSprite(placedHexagon);
                 hexagonSprite.transform.parent = _rotatingParent.transform;
                 _rotatingHexagonSprites.Add(hexagonSprite);
+                if (placedHexagon is BombHexagon hex)
+                {
+                    bombTimerController.Show(hexagonSprite.transform);
+                    bombTimerController.SetTimerText(hex.Timer);
+                }
 
                 var hexagonSpriteMask = Instantiate(hexagonSpriteMaskPrefab, placedHexagon.Center, Quaternion.identity);
                 _hexagonSpriteMasks.Add(hexagonSpriteMask);
@@ -57,7 +63,7 @@ namespace HexagonMusapKahraman.Core
 
         private void ClearInstantiatedObjects()
         {
-            if (_rotatingParent != null) Destroy(_rotatingParent);
+            if (_rotatingParent) Destroy(_rotatingParent);
             foreach (var o in _rotatingHexagonSprites) Destroy(o);
             _rotatingHexagonSprites.Clear();
             foreach (var o in _hexagonSpriteMasks) Destroy(o);
@@ -82,7 +88,7 @@ namespace HexagonMusapKahraman.Core
 
         private void Rotate(RotationDirection direction)
         {
-            if (_rotatingParent == null) return;
+            if (_rotatingParent == null || _rotatingParent.transform == null) return;
             switch (direction)
             {
                 case RotationDirection.Clockwise:
@@ -124,6 +130,7 @@ namespace HexagonMusapKahraman.Core
                                 _shouldPlaceBomb = true;
                             }
                         }
+
                         highScore.SetMaximum(score.GetValue());
                         ResetGateKeepers();
                         ClearInstantiatedObjects();
@@ -160,7 +167,7 @@ namespace HexagonMusapKahraman.Core
         {
             var placedHexagons = _gridBuilder.GetPlacement();
 
-            // Reflect sprite's movement to the related hexagon.
+            // Reflect rotating sprites' movement to the related hexagons.
             foreach (var sprite in _rotatingHexagonSprites)
             foreach (var placedHexagon in placedHexagons.Where(gridTile =>
                 gridTile.Equals(sprite.GetComponent<HexagonRelation>().Hexagon)))
@@ -172,6 +179,23 @@ namespace HexagonMusapKahraman.Core
                 sprite.GetComponent<HexagonRelation>().Hexagon.CheckForThreeMatch(_grid, placedHexagons, matchList);
 
             if (matchList.Count <= 2) return false;
+
+            foreach (var placedHexagon in placedHexagons)
+            {
+                if (!(placedHexagon is BombHexagon hex)) continue;
+                bombTimerController.Show(hex.Center);
+                bombTimerController.SetTimerText(--hex.Timer);
+                if (hex.Timer <= 0)
+                {
+                    _gridBuilder.Clear();
+                    _rotatingParent.SetActive(false);
+                    bombTimerController.Hide();
+                    gameOverMessage.Show();
+                    return false;
+                }
+
+                _shouldPlaceBomb = false;
+            }
 
             FillHoles(matchList, placedHexagons);
             return true;
@@ -227,6 +251,11 @@ namespace HexagonMusapKahraman.Core
             // Remove matched hexagons from the filtered list
             foreach (var hexagon in matchList)
             {
+                if (hexagon is BombHexagon)
+                {
+                    bombTimerController.Hide();
+                }
+
                 tempPlacedHexagons.Remove(hexagon);
                 hexesAboveMatches.RemoveAll(placedHexagon => placedHexagon.Center == hexagon.Center);
                 foreach (var column in columns)
@@ -244,6 +273,12 @@ namespace HexagonMusapKahraman.Core
 
                     // Create sprites to be animated
                     var hexagonSprite = BuildHexagonSprite(hexAboveMatches);
+                    if (hexAboveMatches is BombHexagon hex)
+                    {
+                        bombTimerController.Show(hexagonSprite.transform);
+                        bombTimerController.SetTimerText(hex.Timer);
+                    }
+
                     hexagonSprite.transform.DOMove(targetCenter, matchCountPerColumn * 0.25f).SetEase(Ease.InSine)
                         .OnComplete(() =>
                         {
@@ -258,7 +293,7 @@ namespace HexagonMusapKahraman.Core
             }
 
             _gridBuilder.SetPlacement(tempPlacedHexagons);
-            
+
             var complementaryHexagons = _gridBuilder.GetComplementaryHexagons(_shouldPlaceBomb);
             foreach (var complementaryHexagon in complementaryHexagons)
             {

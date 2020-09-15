@@ -37,6 +37,12 @@ namespace HexagonMusapKahraman.GridMap
             bombHexagons = bombHexagons.OrderBy(hexagon => hexagon.name).ToList();
         }
 
+        public void Clear()
+        {
+            _placedHexagons.Clear();
+            _tilemap.ClearAllTiles();
+        }
+
         public List<PlacedHexagon> GetPlacement()
         {
             return new List<PlacedHexagon>(_placedHexagons);

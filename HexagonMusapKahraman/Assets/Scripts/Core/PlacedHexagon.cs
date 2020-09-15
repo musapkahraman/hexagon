@@ -27,7 +27,6 @@ namespace HexagonMusapKahraman.Core
                 int nextIndex = i == neighbors.Count - 1 ? 0 : i + 1;
                 if (!neighbors[nextIndex].Hexagon.color.Equals(Hexagon.color)) return;
                 float distance = Vector3.Distance(neighbors[nextIndex].Center, neighbors[i].Center);
-                Debug.Log($"<color=yellow>distance: {distance} gridDistance: {gridDistance}</color>");
                 if (!(distance <= gridDistance)) return;
                 list.Add(this);
                 list.Add(neighbors[i]);
