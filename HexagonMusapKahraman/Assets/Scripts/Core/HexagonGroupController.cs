@@ -5,6 +5,7 @@ using DG.Tweening;
 using HexagonMusapKahraman.Gestures;
 using HexagonMusapKahraman.GridMap;
 using HexagonMusapKahraman.ScriptableObjects;
+using HexagonMusapKahraman.UI;
 using UnityEngine;
 
 namespace HexagonMusapKahraman.Core
@@ -12,6 +13,8 @@ namespace HexagonMusapKahraman.Core
     public class HexagonGroupController : MonoBehaviour
     {
         [SerializeField] private int scoreMultiplier = 5;
+        [SerializeField] private int bombScoreInterval = 50;
+        [SerializeField] private BombTimerController bombTimerController;
         [SerializeField] private DynamicData score;
         [SerializeField] private DynamicData move;
         [SerializeField] private DynamicData highScore;
@@ -24,6 +27,7 @@ namespace HexagonMusapKahraman.Core
         private Grid _grid;
         private GridBuilder _gridBuilder;
         private bool _isAlreadyRotating;
+        private bool _shouldPlaceBomb;
         private GameObject _rotatingParent;
         private int _rotationCheckCounter;
 
@@ -63,7 +67,9 @@ namespace HexagonMusapKahraman.Core
         private GameObject BuildHexagonSprite(PlacedHexagon placedHexagon)
         {
             var hexagonSprite = Instantiate(hexagonSpritePrefab, placedHexagon.Center, Quaternion.identity);
-            hexagonSprite.GetComponent<SpriteRenderer>().color = placedHexagon.Hexagon.color;
+            var spriteRenderer = hexagonSprite.GetComponent<SpriteRenderer>();
+            spriteRenderer.sprite = placedHexagon.Hexagon.tile.sprite;
+            spriteRenderer.color = placedHexagon.Hexagon.color;
             hexagonSprite.GetComponent<HexagonRelation>().Hexagon = placedHexagon;
             return hexagonSprite;
         }
@@ -110,8 +116,15 @@ namespace HexagonMusapKahraman.Core
                     {
                         PopMatchedTilesOut(matchList);
                         move.IncreaseValue(1);
-                        int points = scoreMultiplier * matchList.Count;
-                        highScore.SetMaximum(score.IncreaseValue(points));
+                        for (var i = 0; i < matchList.Count; i++)
+                        {
+                            score.IncreaseValue(scoreMultiplier);
+                            if (score.GetValue() % bombScoreInterval == 0)
+                            {
+                                _shouldPlaceBomb = true;
+                            }
+                        }
+                        highScore.SetMaximum(score.GetValue());
                         ResetGateKeepers();
                         ClearInstantiatedObjects();
                     }
@@ -245,8 +258,17 @@ namespace HexagonMusapKahraman.Core
             }
 
             _gridBuilder.SetPlacement(tempPlacedHexagons);
-
-            foreach (var hexagon in _gridBuilder.GetComplementaryHexagons()) Debug.Log(hexagon.Center);
+            
+            var complementaryHexagons = _gridBuilder.GetComplementaryHexagons(_shouldPlaceBomb);
+            foreach (var complementaryHexagon in complementaryHexagons)
+            {
+                if (complementaryHexagon is BombHexagon hex)
+                {
+                    bombTimerController.Show(hex.Center);
+                    bombTimerController.SetTimerText(hex.Timer);
+                    _shouldPlaceBomb = false;
+                }
+            }
         }
     }
 }

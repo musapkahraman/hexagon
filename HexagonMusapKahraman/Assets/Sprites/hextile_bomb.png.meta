@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 8ff23af3a575cd844a68ff3928eb3475
+guid: 75218b889541c534e8f45da3e7cd5835
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 1033068787086279050
-    second: hextile
+      213: -262715355399404928
+    second: hextile_bomb
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -49,7 +49,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 256
+  spritePixelsToUnits: 512
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -116,13 +116,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: hextile
+      name: hextile_bomb
       rect:
         serializedVersion: 2
         x: 0
-        y: 32
-        width: 256
-        height: 224
+        y: 62
+        width: 512
+        height: 450
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -130,8 +130,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a8142d2a692365e00800000000000000
-      internalID: 1033068787086279050
+      spriteID: 082c064b6c5aa5cf0800000000000000
+      internalID: -262715355399404928
       vertices: []
       indices: 
       edges: []

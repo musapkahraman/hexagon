@@ -7,7 +7,7 @@ namespace HexagonMusapKahraman.Core
 {
     public class PlacedHexagon
     {
-        public readonly Hexagon Hexagon;
+        public Hexagon Hexagon;
         public Vector3 Center;
 
         public PlacedHexagon(Hexagon hexagon, Vector3 center)
@@ -19,7 +19,7 @@ namespace HexagonMusapKahraman.Core
         public void CheckForThreeMatch(Grid grid, List<PlacedHexagon> placedHexagons, ISet<PlacedHexagon> list)
         {
             var cellSize = grid.cellSize;
-            float gridDistance = Mathf.Max(cellSize.x, cellSize.y);
+            float gridDistance = Mathf.Min(cellSize.x, cellSize.y) * 1.5f;
             var neighbors = NeighborHood.GetNeighbors(Center, placedHexagons, grid);
             for (var i = 0; i < neighbors.Count; i++)
             {
@@ -27,6 +27,7 @@ namespace HexagonMusapKahraman.Core
                 int nextIndex = i == neighbors.Count - 1 ? 0 : i + 1;
                 if (!neighbors[nextIndex].Hexagon.color.Equals(Hexagon.color)) return;
                 float distance = Vector3.Distance(neighbors[nextIndex].Center, neighbors[i].Center);
+                Debug.Log($"<color=yellow>distance: {distance} gridDistance: {gridDistance}</color>");
                 if (!(distance <= gridDistance)) return;
                 list.Add(this);
                 list.Add(neighbors[i]);
