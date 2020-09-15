@@ -4,13 +4,17 @@ using System.Linq;
 using DG.Tweening;
 using HexagonMusapKahraman.Gestures;
 using HexagonMusapKahraman.GridMap;
+using HexagonMusapKahraman.ScriptableObjects;
 using UnityEngine;
 
 namespace HexagonMusapKahraman.Core
 {
     public class HexagonGroupController : MonoBehaviour
     {
-        [SerializeField] private GameObject debugSprite;
+        [SerializeField] private int scoreMultiplier = 5;
+        [SerializeField] private DynamicData score;
+        [SerializeField] private DynamicData move;
+        [SerializeField] private DynamicData highScore;
         [SerializeField] private GameObject rotatingParentPrefab;
         [SerializeField] private GameObject hexagonSpritePrefab;
         [SerializeField] private GameObject hexagonSpriteMaskPrefab;
@@ -105,6 +109,9 @@ namespace HexagonMusapKahraman.Core
                     else
                     {
                         PopMatchedTilesOut(matchList);
+                        move.IncreaseValue(1);
+                        int points = scoreMultiplier * matchList.Count;
+                        highScore.SetMaximum(score.IncreaseValue(points));
                         ResetGateKeepers();
                         ClearInstantiatedObjects();
                     }
