@@ -6,11 +6,11 @@ namespace HexagonMusapKahraman.Core
     public class BombHexagon : PlacedHexagon
     {
         public int Timer;
-        
-        public BombHexagon(Hexagon hexagon, Vector3 center, int timer) : base(hexagon, center)
+
+        public BombHexagon(Hexagon hexagon, Vector3Int cell, int timer) : base(hexagon, cell)
         {
             Hexagon = hexagon;
-            Center = center;
+            Cell = cell;
             Timer = timer;
         }
     }

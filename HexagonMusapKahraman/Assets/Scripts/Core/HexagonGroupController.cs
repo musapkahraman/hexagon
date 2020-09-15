@@ -28,14 +28,14 @@ namespace HexagonMusapKahraman.Core
         private Grid _grid;
         private GridBuilder _gridBuilder;
         private bool _isAlreadyRotating;
-        private bool _shouldPlaceBomb;
         private GameObject _rotatingParent;
         private int _rotationCheckCounter;
+        private bool _shouldPlaceBomb;
 
         private void Awake()
         {
-            _gridBuilder = GetComponent<GridBuilder>();
             _grid = GetComponent<Grid>();
+            _gridBuilder = GetComponent<GridBuilder>();
         }
 
         public void ShowAtCenter(Vector3 center, IEnumerable<PlacedHexagon> neighbors)
@@ -56,7 +56,8 @@ namespace HexagonMusapKahraman.Core
                     bombTimerController.SetTimerText(hex.Timer);
                 }
 
-                var hexagonSpriteMask = Instantiate(hexagonSpriteMaskPrefab, placedHexagon.Center, Quaternion.identity);
+                var hexagonSpriteMask = Instantiate(hexagonSpriteMaskPrefab,
+                    _grid.GetCellCenterWorld(placedHexagon.Cell), Quaternion.identity);
                 _hexagonSpriteMasks.Add(hexagonSpriteMask);
             }
         }
@@ -72,11 +73,14 @@ namespace HexagonMusapKahraman.Core
 
         private GameObject BuildHexagonSprite(PlacedHexagon placedHexagon)
         {
-            var hexagonSprite = Instantiate(hexagonSpritePrefab, placedHexagon.Center, Quaternion.identity);
+            var hexagonSprite = Instantiate(hexagonSpritePrefab, _grid.GetCellCenterWorld(placedHexagon.Cell),
+                Quaternion.identity);
             var spriteRenderer = hexagonSprite.GetComponent<SpriteRenderer>();
             spriteRenderer.sprite = placedHexagon.Hexagon.tile.sprite;
             spriteRenderer.color = placedHexagon.Hexagon.color;
-            hexagonSprite.GetComponent<HexagonRelation>().Hexagon = placedHexagon;
+            var hexagonRelation = hexagonSprite.GetComponent<HexagonRelation>();
+            hexagonRelation.Hexagon = placedHexagon;
+            hexagonRelation.SetGrid(_grid);
             return hexagonSprite;
         }
 
@@ -125,10 +129,7 @@ namespace HexagonMusapKahraman.Core
                         for (var i = 0; i < matchList.Count; i++)
                         {
                             score.IncreaseValue(scoreMultiplier);
-                            if (score.GetValue() % bombScoreInterval == 0)
-                            {
-                                _shouldPlaceBomb = true;
-                            }
+                            if (score.GetValue() % bombScoreInterval == 0) _shouldPlaceBomb = true;
                         }
 
                         highScore.SetMaximum(score.GetValue());
@@ -152,8 +153,9 @@ namespace HexagonMusapKahraman.Core
             var color = Color.white;
             foreach (var hexagon in matchList)
             {
-                sumX += hexagon.Center.x;
-                sumY += hexagon.Center.y;
+                var center = _grid.GetCellCenterWorld(hexagon.Cell);
+                sumX += center.x;
+                sumY += center.y;
                 color = hexagon.Hexagon.color;
             }
 
@@ -167,12 +169,6 @@ namespace HexagonMusapKahraman.Core
         {
             var placedHexagons = _gridBuilder.GetPlacement();
 
-            // Reflect rotating sprites' movement to the related hexagons.
-            foreach (var sprite in _rotatingHexagonSprites)
-            foreach (var placedHexagon in placedHexagons.Where(gridTile =>
-                gridTile.Equals(sprite.GetComponent<HexagonRelation>().Hexagon)))
-                placedHexagon.Center = sprite.transform.position;
-
             // Compare colors of each sprite with its surrounding tiles' colors.
             matchList = new HashSet<PlacedHexagon>();
             foreach (var sprite in _rotatingHexagonSprites)
@@ -183,7 +179,7 @@ namespace HexagonMusapKahraman.Core
             foreach (var placedHexagon in placedHexagons)
             {
                 if (!(placedHexagon is BombHexagon hex)) continue;
-                bombTimerController.Show(hex.Center);
+                bombTimerController.Show(_grid.GetCellCenterWorld(hex.Cell));
                 bombTimerController.SetTimerText(--hex.Timer);
                 if (hex.Timer <= 0)
                 {
@@ -201,49 +197,55 @@ namespace HexagonMusapKahraman.Core
             return true;
         }
 
-        private void FillHoles(HashSet<PlacedHexagon> matchList, ICollection<PlacedHexagon> tempPlacedHexagons)
+        private void FillHoles(HashSet<PlacedHexagon> matchList, ICollection<PlacedHexagon> placedHexagons)
         {
+            var aboveMatchedHexagons = new List<PlacedHexagon>();
+
             // Filter hexagons to the columns (above and including the matched hexagons)
-            var hexesAboveMatches = (from tempPlacedHexagon in tempPlacedHexagons
-                from matchedHexagon in matchList
-                where Math.Abs(tempPlacedHexagon.Center.x - matchedHexagon.Center.x) < _grid.cellSize.y * 0.5f &&
-                      tempPlacedHexagon.Center.y >= matchedHexagon.Center.y
-                select tempPlacedHexagon).ToList();
+            foreach (var hex in placedHexagons)
+                aboveMatchedHexagons.AddRange(from matchedHex in matchList
+                    let hexCenter = _grid.GetCellCenterWorld(hex.Cell)
+                    let matchedHexCenter = _grid.GetCellCenterWorld(matchedHex.Cell)
+                    let horizontalDistance = Math.Abs(hexCenter.x - matchedHexCenter.x)
+                    let halfGridHeight = _grid.cellSize.y * 0.5f
+                    where horizontalDistance < halfGridHeight && hexCenter.y >= matchedHexCenter.y
+                    select hex);
 
             // Eliminate duplicates
-            var set = new HashSet<PlacedHexagon>(hexesAboveMatches);
-            hexesAboveMatches = new List<PlacedHexagon>(set);
+            var set = new HashSet<PlacedHexagon>(aboveMatchedHexagons);
+            aboveMatchedHexagons = new List<PlacedHexagon>(set);
 
             // Order the filtered list by height
-            hexesAboveMatches = hexesAboveMatches.OrderBy(hexagon => hexagon.Center.y).ToList();
+            aboveMatchedHexagons = aboveMatchedHexagons.OrderBy(hex => _grid.GetCellCenterWorld(hex.Cell).y).ToList();
 
             // Separate them by columns
             var columns = new Dictionary<int, List<PlacedHexagon>>();
-            foreach (var hex in hexesAboveMatches)
+            foreach (var hex in aboveMatchedHexagons)
             {
-                int key = _grid.WorldToCell(hex.Center).y;
+                int key = hex.Cell.y;
                 if (columns.ContainsKey(key)) columns[key].Add(hex);
                 else columns.Add(key, new List<PlacedHexagon> {hex});
             }
 
             // Number of hexagon matches per column
             var matchCountPerColumns = new Dictionary<int, int>();
-            foreach (var hex in from hex in hexesAboveMatches
+            foreach (var hex in from hex in aboveMatchedHexagons
                 from match in matchList
-                where hex.Center == match.Center
+                where hex.Cell == match.Cell
                 select hex)
             {
-                int key = _grid.WorldToCell(hex.Center).y;
+                int key = hex.Cell.y;
                 if (matchCountPerColumns.ContainsKey(key)) matchCountPerColumns[key]++;
                 else matchCountPerColumns.Add(key, 1);
             }
 
             // Place masks over them
             var masks = new Dictionary<int, List<GameObject>>();
-            foreach (var hex in hexesAboveMatches)
+            foreach (var hex in aboveMatchedHexagons)
             {
-                int key = _grid.WorldToCell(hex.Center).y;
-                var mask = Instantiate(hexagonSpriteMaskPrefab, hex.Center, Quaternion.identity);
+                int key = hex.Cell.y;
+                var mask = Instantiate(hexagonSpriteMaskPrefab, _grid.GetCellCenterWorld(hex.Cell),
+                    Quaternion.identity);
                 if (masks.ContainsKey(key)) masks[key].Add(mask);
                 else masks.Add(key, new List<GameObject> {mask});
             }
@@ -251,17 +253,13 @@ namespace HexagonMusapKahraman.Core
             // Remove matched hexagons from the filtered list
             foreach (var hexagon in matchList)
             {
-                if (hexagon is BombHexagon)
-                {
-                    bombTimerController.Hide();
-                }
+                if (hexagon is BombHexagon) bombTimerController.Hide();
 
-                tempPlacedHexagons.Remove(hexagon);
-                hexesAboveMatches.RemoveAll(placedHexagon => placedHexagon.Center == hexagon.Center);
+                placedHexagons.Remove(hexagon);
+                aboveMatchedHexagons.RemoveAll(placedHexagon => placedHexagon.Cell == hexagon.Cell);
                 foreach (var column in columns)
-                    column.Value.RemoveAll(placedHexagon => placedHexagon.Center == hexagon.Center);
+                    column.Value.RemoveAll(placedHexagon => placedHexagon.Cell == hexagon.Cell);
             }
-
 
             foreach (var column in columns)
             {
@@ -269,7 +267,8 @@ namespace HexagonMusapKahraman.Core
                 float distanceToDescend = matchCountPerColumn * _grid.cellSize.x;
                 foreach (var hexAboveMatches in column.Value)
                 {
-                    var targetCenter = hexAboveMatches.Center + distanceToDescend * Vector3.down;
+                    var targetCenter = _grid.GetCellCenterWorld(hexAboveMatches.Cell) +
+                                       distanceToDescend * Vector3.down;
 
                     // Create sprites to be animated
                     var hexagonSprite = BuildHexagonSprite(hexAboveMatches);
@@ -286,24 +285,22 @@ namespace HexagonMusapKahraman.Core
                             foreach (var o in masks[column.Key]) Destroy(o);
                         });
 
-                    tempPlacedHexagons.Remove(hexAboveMatches);
-                    hexAboveMatches.Center = targetCenter;
-                    tempPlacedHexagons.Add(hexAboveMatches);
+                    placedHexagons.Remove(hexAboveMatches);
+                    hexAboveMatches.Cell = _grid.WorldToCell(targetCenter);
+                    placedHexagons.Add(hexAboveMatches);
                 }
             }
 
-            _gridBuilder.SetPlacement(tempPlacedHexagons);
+            _gridBuilder.SetPlacement(placedHexagons);
 
             var complementaryHexagons = _gridBuilder.GetComplementaryHexagons(_shouldPlaceBomb);
             foreach (var complementaryHexagon in complementaryHexagons)
-            {
                 if (complementaryHexagon is BombHexagon hex)
                 {
-                    bombTimerController.Show(hex.Center);
+                    bombTimerController.Show(_grid.GetCellCenterWorld(hex.Cell));
                     bombTimerController.SetTimerText(hex.Timer);
                     _shouldPlaceBomb = false;
                 }
-            }
         }
     }
 }

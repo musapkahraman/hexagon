@@ -10,6 +10,7 @@ namespace HexagonMusapKahraman.GridMap
     {
         [SerializeField] private int selectionCount = 3;
         private Camera _camera;
+        private Grid _grid;
         private GridBuilder _gridBuilder;
         private HexagonGroupController _groupController;
         private bool _isUserRotateInput;
@@ -18,6 +19,7 @@ namespace HexagonMusapKahraman.GridMap
         private void Awake()
         {
             _camera = Camera.main;
+            _grid = GetComponentInParent<Grid>();
             _gridBuilder = GetComponentInParent<GridBuilder>();
             _groupController = GetComponentInParent<HexagonGroupController>();
         }
@@ -53,13 +55,14 @@ namespace HexagonMusapKahraman.GridMap
             if (_isUserRotateInput) return;
             var cameraClickedWorldPoint = _camera.ScreenToWorldPoint(eventData.position);
             var clickedPoint = new Vector3(cameraClickedWorldPoint.x, cameraClickedWorldPoint.y, 0);
-            var neighbors = NeighborHood.GetNeighbors(clickedPoint, _gridBuilder.GetPlacement(), selectionCount);
+            var neighbors = NeighborHood.GetNeighbors(_grid, clickedPoint, _gridBuilder.GetPlacement(), selectionCount);
             var sumX = 0f;
             var sumY = 0f;
             for (var i = 0; i < selectionCount; i++)
             {
-                sumX += neighbors[i].Center.x;
-                sumY += neighbors[i].Center.y;
+                var center = _grid.GetCellCenterWorld(neighbors[i].Cell);
+                sumX += center.x;
+                sumY += center.y;
             }
 
             _selectionCenter = new Vector3(sumX / selectionCount, sumY / selectionCount, 0);

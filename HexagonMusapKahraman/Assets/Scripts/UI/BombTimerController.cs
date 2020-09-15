@@ -1,5 +1,4 @@
-﻿using System;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 
 namespace HexagonMusapKahraman.UI
@@ -31,7 +30,7 @@ namespace HexagonMusapKahraman.UI
             _canvas.enabled = true;
             transform.position = position;
         }
-        
+
         public void Show(Transform t)
         {
             _canvas.enabled = true;

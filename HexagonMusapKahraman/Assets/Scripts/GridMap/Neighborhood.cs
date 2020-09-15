@@ -14,13 +14,16 @@ namespace HexagonMusapKahraman.GridMap
 
     public static class NeighborHood
     {
-        public static List<PlacedHexagon> GetNeighbors(Vector3 point, List<PlacedHexagon> hexagons, int count)
+        private const float HexagonTilesHorizontalDistance = 0.75f;
+
+        public static List<PlacedHexagon> GetNeighbors(Grid grid, Vector3 point, List<PlacedHexagon> hexagons,
+            int count)
         {
             var distances = new SortedList<float, PlacedHexagon>();
             for (var i = 0; i < hexagons.Count; i++)
             {
                 var hexagon = hexagons[i];
-                float sqrMagnitude = Vector3.SqrMagnitude(point - hexagon.Center);
+                float sqrMagnitude = Vector3.SqrMagnitude(point - grid.GetCellCenterWorld(hexagon.Cell));
 
                 while (distances.ContainsKey(sqrMagnitude))
                     sqrMagnitude += 0.001f;
@@ -33,8 +36,9 @@ namespace HexagonMusapKahraman.GridMap
             {
                 if (i > 1)
                 {
-                    float distanceBetweenLegs =
-                        Vector3.SqrMagnitude(neighbors[1].Center - distances[distances.Keys[i]].Center);
+                    var neighborCenter = grid.GetCellCenterWorld(neighbors[1].Cell);
+                    var center = grid.GetCellCenterWorld(distances[distances.Keys[i]].Cell);
+                    float distanceBetweenLegs = Vector3.SqrMagnitude(neighborCenter - center);
                     if (distanceBetweenLegs > 2) continue;
                 }
 
@@ -44,66 +48,63 @@ namespace HexagonMusapKahraman.GridMap
             return neighbors;
         }
 
-        public static List<PlacedHexagon> GetNeighbors(Vector3 cellCenterWorld, List<PlacedHexagon> hexagons,
-            Grid grid)
+        public static List<PlacedHexagon> GetNeighbors(Vector3Int cell, List<PlacedHexagon> hexagons, Grid grid)
         {
             var cellSize = grid.cellSize;
             float height = cellSize.x;
-            float width = cellSize.y * 0.8f;
-            var neighborCenterPoints = new List<Vector3>(6)
+            float width = cellSize.y * HexagonTilesHorizontalDistance;
+            var cellCenterWorld = grid.GetCellCenterWorld(cell);
+            const int neighborsCount = 6;
+            var neighborCells = new List<Vector3Int>(neighborsCount)
             {
-                grid.GetCellCenterWorld(grid.WorldToCell(cellCenterWorld + new Vector3(0, height, 0))),
-                grid.GetCellCenterWorld(grid.WorldToCell(cellCenterWorld + new Vector3(width, height * 0.5f, 0))),
-                grid.GetCellCenterWorld(grid.WorldToCell(cellCenterWorld + new Vector3(width, -height * 0.5f, 0))),
-                grid.GetCellCenterWorld(grid.WorldToCell(cellCenterWorld + new Vector3(0, -height, 0))),
-                grid.GetCellCenterWorld(grid.WorldToCell(cellCenterWorld + new Vector3(-width, -height * 0.5f, 0))),
-                grid.GetCellCenterWorld(grid.WorldToCell(cellCenterWorld + new Vector3(-width, height * 0.5f, 0)))
+                grid.WorldToCell(cellCenterWorld + new Vector3(0, height, 0)),
+                grid.WorldToCell(cellCenterWorld + new Vector3(width, height * 0.5f, 0)),
+                grid.WorldToCell(cellCenterWorld + new Vector3(width, -height * 0.5f, 0)),
+                grid.WorldToCell(cellCenterWorld + new Vector3(0, -height, 0)),
+                grid.WorldToCell(cellCenterWorld + new Vector3(-width, -height * 0.5f, 0)),
+                grid.WorldToCell(cellCenterWorld + new Vector3(-width, height * 0.5f, 0))
             };
+
             var neighbors = new List<PlacedHexagon>();
-            for (var i = 0; i < neighborCenterPoints.Count; i++)
+            for (var i = 0; i < neighborsCount; i++)
             for (var j = 0; j < hexagons.Count; j++)
-            {
-                float distance = Vector3.Distance(hexagons[j].Center, neighborCenterPoints[i]);
-                if (distance < 0.5f) neighbors.Add(hexagons[j]);
-            }
+                if (neighborCells[i] == hexagons[j].Cell)
+                    neighbors.Add(hexagons[j]);
 
             return neighbors;
         }
 
-        public static bool GetNeighbor(Vector3 cellCenterWorld, List<PlacedHexagon> hexagons, Grid grid,
+        public static bool GetNeighbor(Vector3Int cell, List<PlacedHexagon> hexagons, Grid grid,
             NeighborType neighborType, out PlacedHexagon neighbor)
         {
             var cellSize = grid.cellSize;
             float height = cellSize.x;
-            float width = cellSize.y * 0.8f;
-            Vector3 neighborWorldPoint;
+            float width = cellSize.y * HexagonTilesHorizontalDistance;
+            var cellCenterWorld = grid.GetCellCenterWorld(cell);
+            Vector3Int neighborCell;
             switch (neighborType)
             {
                 case NeighborType.Top:
-                    neighborWorldPoint = cellCenterWorld + new Vector3(0, height, 0);
+                    neighborCell = grid.WorldToCell(cellCenterWorld + new Vector3(0, height, 0));
                     break;
                 case NeighborType.Down:
-                    neighborWorldPoint = cellCenterWorld + new Vector3(0, -height, 0);
+                    neighborCell = grid.WorldToCell(cellCenterWorld + new Vector3(0, -height, 0));
                     break;
                 case NeighborType.BottomLeft:
-                    neighborWorldPoint = cellCenterWorld + new Vector3(-width, -height * 0.5f, 0);
+                    neighborCell = grid.WorldToCell(cellCenterWorld + new Vector3(-width, -height * 0.5f, 0));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(neighborType), neighborType, null);
             }
 
-            var neighborCell = grid.WorldToCell(neighborWorldPoint);
-            var neighborCenterPoint = grid.GetCellCenterWorld(neighborCell);
-
             for (var j = 0; j < hexagons.Count; j++)
             {
-                float distance = Vector3.Distance(hexagons[j].Center, neighborCenterPoint);
-                if (!(distance < 0.5f)) continue;
+                if (neighborCell != hexagons[j].Cell) continue;
                 neighbor = hexagons[j];
                 return true;
             }
 
-            neighbor = new PlacedHexagon(null, neighborWorldPoint);
+            neighbor = new PlacedHexagon(null, neighborCell);
             return false;
         }
     }

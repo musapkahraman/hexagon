@@ -10,18 +10,18 @@ namespace HexagonMusapKahraman.UI
         [SerializeField] private DynamicData move;
         [SerializeField] private DynamicData highScore;
 
-        public void Replay()
-        {
-            score.ResetValue();
-            move.ResetValue();
-            SceneManager.LoadScene(0);
-        }
-
         private void OnApplicationQuit()
         {
             score.ResetValue();
             move.ResetValue();
             highScore.ResetValue();
+        }
+
+        public void Replay()
+        {
+            score.ResetValue();
+            move.ResetValue();
+            SceneManager.LoadScene(0);
         }
     }
 }

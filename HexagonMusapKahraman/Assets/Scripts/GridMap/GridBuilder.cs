@@ -55,11 +55,11 @@ namespace HexagonMusapKahraman.GridMap
             foreach (var placedHexagon in _placedHexagons)
             {
                 var tile = CreateTile(placedHexagon.Hexagon);
-                _tilemap.SetTile(_grid.WorldToCell(placedHexagon.Center), tile);
+                _tilemap.SetTile(placedHexagon.Cell, tile);
             }
         }
 
-        public List<PlacedHexagon> GetComplementaryHexagons(bool shouldPlaceBomb)
+        public IEnumerable<PlacedHexagon> GetComplementaryHexagons(bool shouldPlaceBomb)
         {
             var alreadyPlacedBomb = false;
             var complementaryHexagons = new List<PlacedHexagon>();
@@ -67,36 +67,35 @@ namespace HexagonMusapKahraman.GridMap
             for (var rowIndex = 0; rowIndex < _gridSize.y; rowIndex++)
             {
                 var position = new Vector3Int(rowIndex, columnIndex, 0);
-                var value = _placedHexagons.Find(placedHexagon => _grid.WorldToCell(placedHexagon.Center) == position);
+                var value = _placedHexagons.Find(placedHexagon => placedHexagon.Cell == position);
                 if (value != null) continue;
-                var cellCenter = _grid.GetCellCenterWorld(position);
 
                 if (shouldPlaceBomb && !alreadyPlacedBomb)
                 {
                     alreadyPlacedBomb = true;
                     var hexagon = bombHexagons[Random.Range(0, bombHexagons.Count)];
-                    if (NeighborHood.GetNeighbor(cellCenter, _placedHexagons, _grid, NeighborType.BottomLeft,
+                    if (NeighborHood.GetNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
                         out var neighbor))
                         while (neighbor.Hexagon.color.Equals(hexagon.color))
                             hexagon = bombHexagons[Random.Range(0, bombHexagons.Count)];
 
                     var tile = CreateTile(hexagon);
                     _tilemap.SetTile(position, tile);
-                    var item = new BombHexagon(hexagon, _grid.GetCellCenterWorld(position), Random.Range(6, 10));
+                    var item = new BombHexagon(hexagon, position, Random.Range(6, 10));
                     complementaryHexagons.Add(item);
                     _placedHexagons.Add(item);
                 }
                 else
                 {
                     var hexagon = hexagons[Random.Range(0, hexagons.Count)];
-                    if (NeighborHood.GetNeighbor(cellCenter, _placedHexagons, _grid, NeighborType.BottomLeft,
+                    if (NeighborHood.GetNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
                         out var neighbor))
                         while (neighbor.Hexagon.color.Equals(hexagon.color))
                             hexagon = hexagons[Random.Range(0, hexagons.Count)];
 
                     var tile = CreateTile(hexagon);
                     _tilemap.SetTile(position, tile);
-                    var item = new PlacedHexagon(hexagon, _grid.GetCellCenterWorld(position));
+                    var item = new PlacedHexagon(hexagon, position);
                     complementaryHexagons.Add(item);
                     _placedHexagons.Add(item);
                 }
@@ -111,16 +110,15 @@ namespace HexagonMusapKahraman.GridMap
             for (var rowIndex = 0; rowIndex < _gridSize.y; rowIndex++)
             {
                 var position = new Vector3Int(rowIndex, columnIndex, 0);
-                var cellCenter = _grid.GetCellCenterWorld(position);
                 var hexagon = hexagons[Random.Range(0, hexagons.Count)];
-                if (NeighborHood.GetNeighbor(cellCenter, _placedHexagons, _grid, NeighborType.BottomLeft,
+                if (NeighborHood.GetNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
                     out var neighbor))
                     while (neighbor.Hexagon.color.Equals(hexagon.color))
                         hexagon = hexagons[Random.Range(0, hexagons.Count)];
 
                 var tile = CreateTile(hexagon);
                 _tilemap.SetTile(position, tile);
-                _placedHexagons.Add(new PlacedHexagon(hexagon, _grid.GetCellCenterWorld(position)));
+                _placedHexagons.Add(new PlacedHexagon(hexagon, position));
             }
         }
 
