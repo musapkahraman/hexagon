@@ -25,7 +25,7 @@ namespace HexagonMusapKahraman.ScriptableObjects
             value = 0;
         }
 
-        public void SetValue(int newValue)
+        private void SetValue(int newValue)
         {
             value = newValue;
             ValueChanged?.Invoke(value);

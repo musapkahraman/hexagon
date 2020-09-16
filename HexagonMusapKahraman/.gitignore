@@ -3,7 +3,7 @@
 _UpgradeReport_Files/
 [Bb]in/
 [Bb]uild/
-[Bb]uilds/
+# [Bb]uilds/
 [Ll]ibrary/
 [Ll]ogs/
 [Oo]bj/
@@ -59,7 +59,7 @@ ExportedObj/
 sysinfo.txt
 
 # Builds
-*.apk
+# *.apk
 *.aab
 *.unitypackage
 

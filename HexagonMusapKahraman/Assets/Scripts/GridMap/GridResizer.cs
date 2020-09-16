@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Tilemaps;
 
 namespace HexagonMusapKahraman.GridMap
@@ -12,6 +13,11 @@ namespace HexagonMusapKahraman.GridMap
         private Camera _camera;
         private BoxCollider2D _collider;
         private Tilemap _tilemap;
+
+        private void Awake()
+        {
+            OnValidate();
+        }
 
         private void OnValidate()
         {
