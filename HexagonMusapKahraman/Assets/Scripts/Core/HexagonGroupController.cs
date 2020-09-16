@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
@@ -12,6 +13,8 @@ namespace HexagonMusapKahraman.Core
 {
     public class HexagonGroupController : MonoBehaviour
     {
+        
+        private const float DescendSpeed = 0.2f;
         [SerializeField] private int scoreMultiplier = 5;
         [SerializeField] private int bombScoreInterval = 50;
         [SerializeField] private DynamicData score;
@@ -174,10 +177,10 @@ namespace HexagonMusapKahraman.Core
             var set = new HashSet<PlacedHexagon>(aboveMatchedHexagons);
             aboveMatchedHexagons = new List<PlacedHexagon>(set);
 
-            // Order the filtered list by height
+            // Order by height
             aboveMatchedHexagons = aboveMatchedHexagons.OrderBy(hex => _grid.GetCellCenterWorld(hex.Cell).y).ToList();
 
-            // Separate them by columns
+            // Separate by columns
             var columns = new Dictionary<int, List<PlacedHexagon>>();
             foreach (var hex in aboveMatchedHexagons)
             {
@@ -187,18 +190,18 @@ namespace HexagonMusapKahraman.Core
             }
 
             // Number of matched hexagons per column
-            var matchCountPerColumns = new Dictionary<int, int>();
+            var matchedHexagonCountPerColumns = new Dictionary<int, int>();
             foreach (var hex in from hex in aboveMatchedHexagons
                 from match in matchedHexagons
                 where hex.Cell == match.Cell
                 select hex)
             {
                 int key = hex.Cell.y;
-                if (matchCountPerColumns.ContainsKey(key)) matchCountPerColumns[key]++;
-                else matchCountPerColumns.Add(key, 1);
+                if (matchedHexagonCountPerColumns.ContainsKey(key)) matchedHexagonCountPerColumns[key]++;
+                else matchedHexagonCountPerColumns.Add(key, 1);
             }
 
-            // Place masks over them
+            // Place masks over the hexagons above and including the matched hexagons
             var masks = new Dictionary<int, List<GameObject>>();
             foreach (var hex in aboveMatchedHexagons)
             {
@@ -208,7 +211,7 @@ namespace HexagonMusapKahraman.Core
                 else masks.Add(key, new List<GameObject> {mask});
             }
 
-            // Remove matched hexagons from the filtered list
+            // Remove matched hexagons from the filter result
             foreach (var hexagon in matchedHexagons)
             {
                 if (hexagon is BombHexagon) bombTimerController.Hide();
@@ -218,39 +221,28 @@ namespace HexagonMusapKahraman.Core
                 foreach (var column in columns)
                     column.Value.RemoveAll(placedHexagon => placedHexagon.Cell == hexagon.Cell);
             }
-
+            
+            // Animate descending of the hexagons to fill the holes
             foreach (var column in columns)
             {
-                int matchCountPerColumn = matchCountPerColumns[column.Key];
-                float descend = matchCountPerColumn * _grid.cellSize.x;
-                foreach (var hexAboveMatches in column.Value)
+                if (column.Value.Count == 0)
                 {
-                    var targetCenter = _grid.GetCellCenterWorld(hexAboveMatches.Cell) + descend * Vector3.down;
+                    OnColumnDescended(masks[column.Key]);
+                }
+                
+                float descend = matchedHexagonCountPerColumns[column.Key] * _grid.cellSize.x;
+                StartCoroutine(DescendCoroutine(column.Value, descend, masks[column.Key], OnColumnDescended));
 
-                    // Create sprites to be animated
-                    var hexagonSprite = spritePool.GetHexagonSprite(hexAboveMatches);
-                    if (hexAboveMatches is BombHexagon hex)
-                    {
-                        bombTimerController.Show(hexagonSprite.transform);
-                        bombTimerController.SetTimerText(hex.Timer);
-                    }
-
-                    hexagonSprite.transform.DOMove(targetCenter, matchCountPerColumn * 0.25f).SetEase(Ease.InSine)
-                        .OnComplete(() =>
-                        {
-                            bombTimerController.UnHookTransform();
-                            spritePool.ReturnHexagonSprite(hexagonSprite);
-                            foreach (var mask in masks[column.Key]) spritePool.ReturnMask(mask);
-                        });
-
-                    placedHexagons.Remove(hexAboveMatches);
-                    hexAboveMatches.Cell = _grid.WorldToCell(targetCenter);
-                    placedHexagons.Add(hexAboveMatches);
+                foreach (var placedHexagon in column.Value)
+                {
+                    var destination = _grid.GetCellCenterWorld(placedHexagon.Cell) + descend * Vector3.down;
+                    placedHexagons.Remove(placedHexagon);
+                    placedHexagon.Cell = _grid.WorldToCell(destination);
+                    placedHexagons.Add(placedHexagon);
                 }
             }
 
             _gridBuilder.SetPlacement(placedHexagons);
-
             var complementaryHexagons = _gridBuilder.GetComplementaryHexagons(_shouldPlaceBomb);
             foreach (var complementaryHexagon in complementaryHexagons)
             {
@@ -258,6 +250,75 @@ namespace HexagonMusapKahraman.Core
                 bombTimerController.Show(_grid.GetCellCenterWorld(hex.Cell));
                 bombTimerController.SetTimerText(hex.Timer);
                 _shouldPlaceBomb = false;
+            }
+        }
+
+        private IEnumerator DescendCoroutine(IReadOnlyList<PlacedHexagon> descendingHexagonsInTheColumn, float descend,
+            List<GameObject> masksInTheColumn, Action<List<GameObject>> allTilesDescended)
+        {
+            var hexagonSprites = new List<HexagonRelation>();
+            for (var i = 0; i < descendingHexagonsInTheColumn.Count; i++)
+                hexagonSprites.Add(spritePool.GetHexagonSprite(descendingHexagonsInTheColumn[i]));
+
+            var counter = 0;
+            for (var i = 0; i < descendingHexagonsInTheColumn.Count; i++)
+            {
+                var hexagon = descendingHexagonsInTheColumn[i];
+                var hexagonSprite = hexagonSprites[i];
+                if (hexagon is BombHexagon bombHexagon)
+                {
+                    bombTimerController.Show(hexagonSprite.transform);
+                    bombTimerController.SetTimerText(bombHexagon.Timer);
+                }
+
+                var destination = _grid.GetCellCenterWorld(hexagon.Cell) + descend * Vector3.down;
+                int maskIndex = i;
+                hexagonSprite.transform.DOMove(destination, descend * DescendSpeed).SetEase(Ease.InSine)
+                    .OnComplete(() =>
+                    {
+                        if (hexagon is BombHexagon) bombTimerController.UnHookTransform();
+                        spritePool.ReturnHexagonSprite(hexagonSprite);
+                        spritePool.ReturnMask(masksInTheColumn[maskIndex]);
+
+                        if (++counter != descendingHexagonsInTheColumn.Count) return;
+                        masksInTheColumn.Reverse();
+                        for (var j = 0; j < counter; j++)
+                            masksInTheColumn.RemoveAt(masksInTheColumn.Count - 1);
+                        allTilesDescended?.Invoke(masksInTheColumn);
+                    });
+                yield return new WaitForSeconds(DescendSpeed * 0.5f);
+            }
+        }
+
+        private void OnColumnDescended(List<GameObject> remainingMasks)
+        {
+            float descend = remainingMasks.Count * _grid.cellSize.x;
+            for (var i = 0; i < remainingMasks.Count; i++)
+            {
+                foreach (var hexagon in _gridBuilder.GetPlacement())
+                {
+                    if (hexagon.Cell != _grid.WorldToCell(remainingMasks[i].transform.position)) continue;
+                    var hexagonSprite = spritePool.GetHexagonSprite(hexagon);
+                    var spriteTransform = hexagonSprite.transform;
+                    var position = spriteTransform.position;
+                    var destination = position;
+                    position += Vector3.up * descend;
+                    spriteTransform.position = position;
+                    if (hexagon is BombHexagon bombHexagon)
+                    {
+                        bombTimerController.Show(spriteTransform);
+                        bombTimerController.SetTimerText(bombHexagon.Timer);
+                    }
+
+                    int maskIndex = i;
+                    spriteTransform.DOMove(destination, descend * DescendSpeed).SetEase(Ease.InSine)
+                        .OnComplete(() =>
+                        {
+                            if (hexagon is BombHexagon) bombTimerController.UnHookTransform();
+                            spritePool.ReturnHexagonSprite(hexagonSprite);
+                            spritePool.ReturnMask(remainingMasks[maskIndex]);
+                        });
+                }
             }
         }
     }
