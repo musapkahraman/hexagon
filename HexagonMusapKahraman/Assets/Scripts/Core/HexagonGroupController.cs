@@ -86,10 +86,10 @@ namespace HexagonMusapKahraman.Core
                     }
                     else
                     {
-                        move.IncreaseValue(1);
-                        ExplodeMatchedHexagons(matchedHexagons);
                         ResetGateKeepers();
+                        move.IncreaseValue(1);
                         spritePool.ReturnRotatingParent();
+                        ExplodeMatchedHexagons(matchedHexagons);
                     }
                 }
 
@@ -112,6 +112,15 @@ namespace HexagonMusapKahraman.Core
 
             foreach (var _ in _gridBuilder.GetPlacement().OfType<BombHexagon>()) _shouldPlaceBomb = false;
             highScore.SetMaximum(score.GetValue());
+            if (!NeighborHood.IsThereAnyAvailableMovesLeft(_gridBuilder.GetPlacement(), _grid)) ExecuteGameOver();
+        }
+
+        private void ExecuteGameOver()
+        {
+            _isAlreadyRotating = true;
+            spritePool.ReturnRotatingParent();
+            gameOverMessage.Show();
+            Time.timeScale = 0;
         }
 
         private void AnimatePopOut(ICollection<PlacedHexagon> matchedHexagons)
@@ -153,10 +162,7 @@ namespace HexagonMusapKahraman.Core
                 if (bombHexagon.Timer <= 0)
                 {
                     // The bomb explodes, game is over.
-                    _gridBuilder.Clear();
-                    spritePool.ReturnRotatingParent();
-                    bombTimerController.Hide();
-                    gameOverMessage.Show();
+                    ExecuteGameOver();
                     return false;
                 }
 
@@ -220,12 +226,12 @@ namespace HexagonMusapKahraman.Core
                 else masks.Add(key, new List<GameObject> {mask});
             }
 
-            // Remove matched hexagons from the filter result
+            // Remove matched hexagons
             foreach (var hexagon in matchedHexagons)
             {
                 if (hexagon is BombHexagon) bombTimerController.Hide();
-
                 placedHexagons.Remove(hexagon);
+                // Remove matched hexagons from the filter result
                 aboveMatchedHexagons.RemoveAll(placedHexagon => placedHexagon.Cell == hexagon.Cell);
                 foreach (var column in columns)
                     column.Value.RemoveAll(placedHexagon => placedHexagon.Cell == hexagon.Cell);
@@ -253,7 +259,6 @@ namespace HexagonMusapKahraman.Core
             foreach (var complementaryHexagon in complementaryHexagons)
             {
                 if (!(complementaryHexagon is BombHexagon hex)) continue;
-                bombTimerController.Show(_grid.GetCellCenterWorld(hex.Cell));
                 bombTimerController.SetTimerText(hex.Timer);
                 _shouldPlaceBomb = false;
             }
@@ -312,12 +317,6 @@ namespace HexagonMusapKahraman.Core
                     var destination = position;
                     position += Vector3.up * descend;
                     spriteTransform.position = position;
-                    if (hexagon is BombHexagon bombHexagon)
-                    {
-                        bombTimerController.Show(spriteTransform);
-                        bombTimerController.SetTimerText(bombHexagon.Timer);
-                    }
-
                     int maskIndex = i;
                     _descendingTiles.Add(hexagonSprite.GetPlacedHexagon().Cell);
                     spriteTransform.DOMove(destination, descend * TileSpeed).SetEase(Ease.InSine)
@@ -340,7 +339,16 @@ namespace HexagonMusapKahraman.Core
             var placedHexagons = _gridBuilder.GetPlacement();
             var matchedHexagons = new HashSet<PlacedHexagon>();
             foreach (var placedHexagon in placedHexagons)
+            {
+                if (placedHexagon is BombHexagon bombHexagon)
+                {
+                    bombTimerController.Show(_grid.GetCellCenterWorld(placedHexagon.Cell));
+                    bombTimerController.SetTimerText(bombHexagon.Timer);
+                }
+
                 placedHexagon.CheckForMatch(_grid, placedHexagons, matchedHexagons);
+            }
+
             if (matchedHexagons.Count <= 2) yield break;
             var counter = 0;
             var firstThree = matchedHexagons.Where(matchedHexagon => ++counter <= 3).ToList();

@@ -48,7 +48,34 @@ namespace HexagonMusapKahraman.GridMap
             return neighbors;
         }
 
-        public static List<PlacedHexagon> GetNeighbors(Vector3Int cell, List<PlacedHexagon> hexagons, Grid grid)
+        public static bool FindNeighbor(Vector3Int cell, List<PlacedHexagon> hexagons, Grid grid,
+            NeighborType neighborType, out PlacedHexagon neighbor)
+        {
+            var neighbors = GetNeighborsIndexed(cell, hexagons, grid);
+            neighbor = new PlacedHexagon(null, Vector3Int.down);
+            switch (neighborType)
+            {
+                case NeighborType.Top:
+                    if (!neighbors.ContainsKey(0)) return false;
+                    neighbor = neighbors[0];
+                    break;
+                case NeighborType.Down:
+                    if (!neighbors.ContainsKey(3)) return false;
+                    neighbor = neighbors[3];
+                    break;
+                case NeighborType.BottomLeft:
+                    if (!neighbors.ContainsKey(4)) return false;
+                    neighbor = neighbors[4];
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(neighborType), neighborType, null);
+            }
+
+            return true;
+        }
+
+        public static Dictionary<int, PlacedHexagon> GetNeighborsIndexed(Vector3Int cell, List<PlacedHexagon> hexagons,
+            Grid grid)
         {
             var cellSize = grid.cellSize;
             float height = cellSize.x;
@@ -65,46 +92,53 @@ namespace HexagonMusapKahraman.GridMap
                 grid.WorldToCell(cellCenterWorld + new Vector3(-width, height * 0.5f, 0))
             };
 
-            var neighbors = new List<PlacedHexagon>();
+            var neighbors = new Dictionary<int, PlacedHexagon>();
             for (var i = 0; i < neighborsCount; i++)
             for (var j = 0; j < hexagons.Count; j++)
                 if (neighborCells[i] == hexagons[j].Cell)
-                    neighbors.Add(hexagons[j]);
+                {
+                    if (neighbors.ContainsKey(i))
+                        neighbors[i] = hexagons[j];
+                    else
+                        neighbors.Add(i, hexagons[j]);
+                }
 
             return neighbors;
         }
 
-        public static bool GetNeighbor(Vector3Int cell, List<PlacedHexagon> hexagons, Grid grid,
-            NeighborType neighborType, out PlacedHexagon neighbor)
+        public static bool IsThereAnyAvailableMovesLeft(List<PlacedHexagon> hexagons, Grid grid)
         {
-            var cellSize = grid.cellSize;
-            float height = cellSize.x;
-            float width = cellSize.y * HexagonTilesHorizontalDistance;
-            var cellCenterWorld = grid.GetCellCenterWorld(cell);
-            Vector3Int neighborCell;
-            switch (neighborType)
+            foreach (var placedHexagon in hexagons)
             {
-                case NeighborType.Top:
-                    neighborCell = grid.WorldToCell(cellCenterWorld + new Vector3(0, height, 0));
-                    break;
-                case NeighborType.Down:
-                    neighborCell = grid.WorldToCell(cellCenterWorld + new Vector3(0, -height, 0));
-                    break;
-                case NeighborType.BottomLeft:
-                    neighborCell = grid.WorldToCell(cellCenterWorld + new Vector3(-width, -height * 0.5f, 0));
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(neighborType), neighborType, null);
+                var color = placedHexagon.Hexagon.color;
+                var neighbors = GetNeighborsIndexed(placedHexagon.Cell, hexagons, grid);
+                for (var i = 0; i < neighbors.Count; i++)
+                {
+                    if (!neighbors.ContainsKey(i)) continue;
+                    if (neighbors[i].Hexagon.color != color) continue;
+
+                    int key = (i + 1) % 6;
+                    if (!neighbors.ContainsKey(key)) continue;
+                    var rightFlank = GetNeighborsIndexed(neighbors[key].Cell, hexagons, grid);
+                    for (var j = 0; j < 4; j++)
+                    {
+                        if (!rightFlank.ContainsKey(j)) continue;
+                        if (rightFlank[j].Hexagon.color == color)
+                            return true;
+                    }
+
+                    key = (i + 5) % 6;
+                    if (!neighbors.ContainsKey(key)) continue;
+                    var leftFlank = GetNeighborsIndexed(neighbors[(i + 5) % 6].Cell, hexagons, grid);
+                    for (var j = 3; j < 7; j++)
+                    {
+                        if (!leftFlank.ContainsKey(j)) continue;
+                        if (leftFlank[j % 6].Hexagon.color == color)
+                            return true;
+                    }
+                }
             }
 
-            for (var j = 0; j < hexagons.Count; j++)
-            {
-                if (neighborCell != hexagons[j].Cell) continue;
-                neighbor = hexagons[j];
-                return true;
-            }
-
-            neighbor = new PlacedHexagon(null, neighborCell);
             return false;
         }
     }

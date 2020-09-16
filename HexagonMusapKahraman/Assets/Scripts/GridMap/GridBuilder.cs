@@ -74,7 +74,7 @@ namespace HexagonMusapKahraman.GridMap
                 {
                     alreadyPlacedBomb = true;
                     var hexagon = bombHexagons[Random.Range(0, bombHexagons.Count)];
-                    if (NeighborHood.GetNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
+                    if (NeighborHood.FindNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
                         out var neighbor))
                         while (neighbor.Hexagon.color.Equals(hexagon.color))
                             hexagon = bombHexagons[Random.Range(0, bombHexagons.Count)];
@@ -88,7 +88,7 @@ namespace HexagonMusapKahraman.GridMap
                 else
                 {
                     var hexagon = hexagons[Random.Range(0, hexagons.Count)];
-                    if (NeighborHood.GetNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
+                    if (NeighborHood.FindNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
                         out var neighbor))
                         while (neighbor.Hexagon.color.Equals(hexagon.color))
                             hexagon = hexagons[Random.Range(0, hexagons.Count)];
@@ -111,7 +111,7 @@ namespace HexagonMusapKahraman.GridMap
             {
                 var position = new Vector3Int(rowIndex, columnIndex, 0);
                 var hexagon = hexagons[Random.Range(0, hexagons.Count)];
-                if (NeighborHood.GetNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
+                if (NeighborHood.FindNeighbor(position, _placedHexagons, _grid, NeighborType.BottomLeft,
                     out var neighbor))
                     while (neighbor.Hexagon.color.Equals(hexagon.color))
                         hexagon = hexagons[Random.Range(0, hexagons.Count)];

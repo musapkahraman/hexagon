@@ -113,6 +113,7 @@ namespace HexagonMusapKahraman.Core
                 _rotatingHexagonSprites[i].RemoveRelation();
                 _rotatingHexagonSpriteMasks[i].transform.position = transform.position;
             }
+
             _rotatingParent.position = transform.position;
             _rotatingParent.rotation = Quaternion.identity;
         }

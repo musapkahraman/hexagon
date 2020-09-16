@@ -19,6 +19,7 @@ namespace HexagonMusapKahraman.UI
 
         public void Replay()
         {
+            Time.timeScale = 1;
             score.ResetValue();
             move.ResetValue();
             SceneManager.LoadScene(0);

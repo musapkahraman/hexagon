@@ -6,8 +6,8 @@ namespace HexagonMusapKahraman.Core
     public class HexagonRelation : MonoBehaviour
     {
         private Grid _grid;
-        private SpriteRenderer _spriteRenderer;
         private PlacedHexagon _placedHexagon;
+        private SpriteRenderer _spriteRenderer;
 
         private void Awake()
         {
