@@ -99,7 +99,7 @@ namespace HexagonMusapKahraman.Core
                 spriteTransform.position = spritePosition;
                 spriteTransform.parent = _rotatingParent;
                 if (!(placedHexagon is BombHexagon bombHexagon)) continue;
-                bombTimerController.Show(spritePosition);
+                bombTimerController.Show(spriteTransform);
                 bombTimerController.SetTimerText(bombHexagon.Timer);
             }
 
@@ -114,6 +114,7 @@ namespace HexagonMusapKahraman.Core
                 _rotatingHexagonSpriteMasks[i].transform.position = transform.position;
             }
             _rotatingParent.position = transform.position;
+            _rotatingParent.rotation = Quaternion.identity;
         }
 
         public GameObject GetMask(Vector3 position)

@@ -37,6 +37,11 @@ namespace HexagonMusapKahraman.UI
             _target = t;
         }
 
+        public void UnHookTransform()
+        {
+            _target = null;
+        }
+
         public void Hide()
         {
             _canvas.enabled = false;

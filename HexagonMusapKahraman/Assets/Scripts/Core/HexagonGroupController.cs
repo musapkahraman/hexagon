@@ -37,6 +37,7 @@ namespace HexagonMusapKahraman.Core
         public void ShowRotatingGroupAtCenter(Vector3 center, List<PlacedHexagon> neighbors)
         {
             if (_isAlreadyRotating) return;
+            bombTimerController.UnHookTransform();
             _rotatingParent = spritePool.GetRotatingParent(center, neighbors);
         }
 
@@ -49,6 +50,7 @@ namespace HexagonMusapKahraman.Core
 
         private void Rotate(RotationDirection direction)
         {
+            if (!_rotatingParent) return;
             switch (direction)
             {
                 case RotationDirection.Clockwise:
@@ -236,6 +238,7 @@ namespace HexagonMusapKahraman.Core
                     hexagonSprite.transform.DOMove(targetCenter, matchCountPerColumn * 0.25f).SetEase(Ease.InSine)
                         .OnComplete(() =>
                         {
+                            bombTimerController.UnHookTransform();
                             spritePool.ReturnHexagonSprite(hexagonSprite);
                             foreach (var mask in masks[column.Key]) spritePool.ReturnMask(mask);
                         });
