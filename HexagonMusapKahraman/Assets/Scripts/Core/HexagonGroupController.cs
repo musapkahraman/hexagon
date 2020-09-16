@@ -13,8 +13,8 @@ namespace HexagonMusapKahraman.Core
 {
     public class HexagonGroupController : MonoBehaviour
     {
-        
-        private const float DescendSpeed = 0.2f;
+        private const int RotationPeriodCount = 3;
+        private const float TileSpeed = 0.2f;
         [SerializeField] private int scoreMultiplier = 5;
         [SerializeField] private int bombScoreInterval = 50;
         [SerializeField] private DynamicData score;
@@ -24,6 +24,7 @@ namespace HexagonMusapKahraman.Core
         [SerializeField] private BombTimerController bombTimerController;
         [SerializeField] private GameOverMessage gameOverMessage;
         [SerializeField] private HexagonSpritePool spritePool;
+        private readonly HashSet<Vector3Int> _descendingTiles = new HashSet<Vector3Int>();
         private Grid _grid;
         private GridBuilder _gridBuilder;
         private bool _isAlreadyRotating;
@@ -46,22 +47,24 @@ namespace HexagonMusapKahraman.Core
 
         public void RotateSelectedHexagonGroup(RotationDirection direction)
         {
-            if (_isAlreadyRotating) return;
+            if (_isAlreadyRotating || _descendingTiles.Count > 0) return;
             _isAlreadyRotating = true;
             Rotate(direction);
         }
 
         private void Rotate(RotationDirection direction)
         {
+            const int rotationPeriodAngle = 360 / RotationPeriodCount;
+            const float duration = 2 * TileSpeed;
             if (!_rotatingParent) return;
             switch (direction)
             {
                 case RotationDirection.Clockwise:
-                    _rotatingParent.DORotate(120 * Vector3.back, 0.3f, RotateMode.LocalAxisAdd)
+                    _rotatingParent.DORotate(rotationPeriodAngle * Vector3.back, duration, RotateMode.LocalAxisAdd)
                         .OnComplete(OnRotationComplete);
                     break;
                 case RotationDirection.AntiClockwise:
-                    _rotatingParent.DORotate(120 * Vector3.forward, 0.3f, RotateMode.LocalAxisAdd)
+                    _rotatingParent.DORotate(rotationPeriodAngle * Vector3.forward, duration, RotateMode.LocalAxisAdd)
                         .OnComplete(OnRotationComplete);
                     break;
                 default:
@@ -70,28 +73,21 @@ namespace HexagonMusapKahraman.Core
 
             void OnRotationComplete()
             {
-                if (_rotationCheckCounter >= 2)
+                if (_rotationCheckCounter >= RotationPeriodCount - 1)
                 {
                     ResetGateKeepers();
                 }
                 else
                 {
                     _rotationCheckCounter++;
-                    if (!RotatingGroupMatched(out var matchedHexagons))
+                    if (!IsRotatingGroupMatched(out var matchedHexagons))
                     {
                         Rotate(direction);
                     }
                     else
                     {
-                        AnimatePopOut(matchedHexagons);
                         move.IncreaseValue(1);
-                        for (var i = 0; i < matchedHexagons.Count; i++)
-                        {
-                            score.IncreaseValue(scoreMultiplier);
-                            if (score.GetValue() % bombScoreInterval == 0) _shouldPlaceBomb = true;
-                        }
-
-                        highScore.SetMaximum(score.GetValue());
+                        ExplodeMatchedHexagons(matchedHexagons);
                         ResetGateKeepers();
                         spritePool.ReturnRotatingParent();
                     }
@@ -103,6 +99,19 @@ namespace HexagonMusapKahraman.Core
                     _isAlreadyRotating = false;
                 }
             }
+        }
+
+        private void ExplodeMatchedHexagons(ICollection<PlacedHexagon> matchedHexagons)
+        {
+            AnimatePopOut(matchedHexagons);
+            for (var i = 0; i < matchedHexagons.Count; i++)
+            {
+                score.IncreaseValue(scoreMultiplier);
+                if (score.GetValue() % bombScoreInterval == 0) _shouldPlaceBomb = true;
+            }
+
+            foreach (var _ in _gridBuilder.GetPlacement().OfType<BombHexagon>()) _shouldPlaceBomb = false;
+            highScore.SetMaximum(score.GetValue());
         }
 
         private void AnimatePopOut(ICollection<PlacedHexagon> matchedHexagons)
@@ -124,7 +133,7 @@ namespace HexagonMusapKahraman.Core
             particles.Play();
         }
 
-        private bool RotatingGroupMatched(out HashSet<PlacedHexagon> matchedHexagons)
+        private bool IsRotatingGroupMatched(out HashSet<PlacedHexagon> matchedHexagons)
         {
             var placedHexagons = _gridBuilder.GetPlacement();
 
@@ -158,7 +167,7 @@ namespace HexagonMusapKahraman.Core
             return true;
         }
 
-        private void DestroyMatchedAndFillHoles(HashSet<PlacedHexagon> matchedHexagons,
+        private void DestroyMatchedAndFillHoles(IReadOnlyCollection<PlacedHexagon> matchedHexagons,
             ICollection<PlacedHexagon> placedHexagons)
         {
             var aboveMatchedHexagons = new List<PlacedHexagon>();
@@ -221,17 +230,14 @@ namespace HexagonMusapKahraman.Core
                 foreach (var column in columns)
                     column.Value.RemoveAll(placedHexagon => placedHexagon.Cell == hexagon.Cell);
             }
-            
+
             // Animate descending of the hexagons to fill the holes
             foreach (var column in columns)
             {
-                if (column.Value.Count == 0)
-                {
-                    OnColumnDescended(masks[column.Key]);
-                }
-                
+                if (column.Value.Count == 0) OnColumnDescended(masks[column.Key]);
+
                 float descend = matchedHexagonCountPerColumns[column.Key] * _grid.cellSize.x;
-                StartCoroutine(DescendCoroutine(column.Value, descend, masks[column.Key], OnColumnDescended));
+                StartCoroutine(DescendCoroutine(column.Value, descend, masks[column.Key]));
 
                 foreach (var placedHexagon in column.Value)
                 {
@@ -254,7 +260,7 @@ namespace HexagonMusapKahraman.Core
         }
 
         private IEnumerator DescendCoroutine(IReadOnlyList<PlacedHexagon> descendingHexagonsInTheColumn, float descend,
-            List<GameObject> masksInTheColumn, Action<List<GameObject>> allTilesDescended)
+            List<GameObject> masksInTheColumn)
         {
             var hexagonSprites = new List<HexagonRelation>();
             for (var i = 0; i < descendingHexagonsInTheColumn.Count; i++)
@@ -273,9 +279,11 @@ namespace HexagonMusapKahraman.Core
 
                 var destination = _grid.GetCellCenterWorld(hexagon.Cell) + descend * Vector3.down;
                 int maskIndex = i;
-                hexagonSprite.transform.DOMove(destination, descend * DescendSpeed).SetEase(Ease.InSine)
+                _descendingTiles.Add(hexagonSprite.GetPlacedHexagon().Cell);
+                hexagonSprite.transform.DOMove(destination, descend * TileSpeed).SetEase(Ease.InSine)
                     .OnComplete(() =>
                     {
+                        _descendingTiles.Remove(hexagonSprite.GetPlacedHexagon().Cell);
                         if (hexagon is BombHexagon) bombTimerController.UnHookTransform();
                         spritePool.ReturnHexagonSprite(hexagonSprite);
                         spritePool.ReturnMask(masksInTheColumn[maskIndex]);
@@ -284,17 +292,17 @@ namespace HexagonMusapKahraman.Core
                         masksInTheColumn.Reverse();
                         for (var j = 0; j < counter; j++)
                             masksInTheColumn.RemoveAt(masksInTheColumn.Count - 1);
-                        allTilesDescended?.Invoke(masksInTheColumn);
+                        OnColumnDescended(masksInTheColumn);
                     });
-                yield return new WaitForSeconds(DescendSpeed * 0.5f);
+                yield return new WaitForSeconds(TileSpeed * 0.5f);
             }
         }
 
-        private void OnColumnDescended(List<GameObject> remainingMasks)
+        private void OnColumnDescended(IReadOnlyList<GameObject> remainingMasks)
         {
+            var counter = 0;
             float descend = remainingMasks.Count * _grid.cellSize.x;
             for (var i = 0; i < remainingMasks.Count; i++)
-            {
                 foreach (var hexagon in _gridBuilder.GetPlacement())
                 {
                     if (hexagon.Cell != _grid.WorldToCell(remainingMasks[i].transform.position)) continue;
@@ -311,15 +319,33 @@ namespace HexagonMusapKahraman.Core
                     }
 
                     int maskIndex = i;
-                    spriteTransform.DOMove(destination, descend * DescendSpeed).SetEase(Ease.InSine)
+                    _descendingTiles.Add(hexagonSprite.GetPlacedHexagon().Cell);
+                    spriteTransform.DOMove(destination, descend * TileSpeed).SetEase(Ease.InSine)
                         .OnComplete(() =>
                         {
+                            _descendingTiles.Remove(hexagonSprite.GetPlacedHexagon().Cell);
                             if (hexagon is BombHexagon) bombTimerController.UnHookTransform();
                             spritePool.ReturnHexagonSprite(hexagonSprite);
                             spritePool.ReturnMask(remainingMasks[maskIndex]);
+                            if (++counter != remainingMasks.Count) return;
+                            StartCoroutine(CheckAllTilesForMatchedHexagons());
                         });
                 }
-            }
+        }
+
+        private IEnumerator CheckAllTilesForMatchedHexagons()
+        {
+            while (_descendingTiles.Count > 0) yield return null;
+
+            var placedHexagons = _gridBuilder.GetPlacement();
+            var matchedHexagons = new HashSet<PlacedHexagon>();
+            foreach (var placedHexagon in placedHexagons)
+                placedHexagon.CheckForMatch(_grid, placedHexagons, matchedHexagons);
+            if (matchedHexagons.Count <= 2) yield break;
+            var counter = 0;
+            var firstThree = matchedHexagons.Where(matchedHexagon => ++counter <= 3).ToList();
+            ExplodeMatchedHexagons(firstThree);
+            DestroyMatchedAndFillHoles(firstThree, placedHexagons);
         }
     }
 }
