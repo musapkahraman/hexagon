@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace HexagonMusapKahraman.UI
+namespace HexagonGame.UI
 {
     public class GameOverMessage : MonoBehaviour
     {

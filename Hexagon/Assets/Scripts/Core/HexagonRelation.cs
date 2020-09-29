@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace HexagonMusapKahraman.Core
+namespace HexagonGame.Core
 {
     [RequireComponent(typeof(SpriteRenderer))]
     public class HexagonRelation : MonoBehaviour

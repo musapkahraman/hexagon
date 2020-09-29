@@ -1,7 +1,6 @@
-﻿using HexagonMusapKahraman.ScriptableObjects;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace HexagonMusapKahraman.Core
+namespace HexagonGame.Core
 {
     public class BombHexagon : PlacedHexagon
     {

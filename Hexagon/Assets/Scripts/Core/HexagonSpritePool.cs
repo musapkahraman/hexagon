@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using HexagonMusapKahraman.GridMap;
-using HexagonMusapKahraman.UI;
+using HexagonGame.GridMap;
+using HexagonGame.UI;
 using UnityEngine;
 
-namespace HexagonMusapKahraman.Core
+namespace HexagonGame.Core
 {
     public class HexagonSpritePool : MonoBehaviour
     {

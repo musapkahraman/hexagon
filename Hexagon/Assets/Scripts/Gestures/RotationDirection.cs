@@ -1,4 +1,4 @@
-﻿namespace HexagonMusapKahraman.Gestures
+﻿namespace HexagonGame.Gestures
 {
     public enum RotationDirection
     {

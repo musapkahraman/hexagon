@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using HexagonMusapKahraman.Core;
+using HexagonGame.Core;
 using UnityEngine;
 
-namespace HexagonMusapKahraman.GridMap
+namespace HexagonGame.GridMap
 {
     public enum NeighborType
     {

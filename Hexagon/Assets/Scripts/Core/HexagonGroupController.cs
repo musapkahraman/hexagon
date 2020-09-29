@@ -3,13 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
-using HexagonMusapKahraman.Gestures;
-using HexagonMusapKahraman.GridMap;
-using HexagonMusapKahraman.ScriptableObjects;
-using HexagonMusapKahraman.UI;
+using HexagonGame.Gestures;
+using HexagonGame.GridMap;
+using HexagonGame.UI;
 using UnityEngine;
 
-namespace HexagonMusapKahraman.Core
+namespace HexagonGame.Core
 {
     public class HexagonGroupController : MonoBehaviour
     {

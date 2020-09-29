@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using HexagonMusapKahraman.Core;
-using HexagonMusapKahraman.ScriptableObjects;
+using HexagonGame.Core;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace HexagonMusapKahraman.GridMap
+namespace HexagonGame.GridMap
 {
     [RequireComponent(typeof(GridResizer))]
     public class GridBuilder : MonoBehaviour

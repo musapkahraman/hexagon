@@ -1,8 +1,8 @@
-﻿using HexagonMusapKahraman.ScriptableObjects;
+﻿using HexagonGame.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace HexagonMusapKahraman.UI
+namespace HexagonGame.UI
 {
     public class ReplayButtonController : MonoBehaviour
     {

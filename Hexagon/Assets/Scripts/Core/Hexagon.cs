@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace HexagonMusapKahraman.ScriptableObjects
+namespace HexagonGame.Core
 {
     [CreateAssetMenu]
     public class Hexagon : ScriptableObject

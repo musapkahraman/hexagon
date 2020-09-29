@@ -1,7 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-namespace HexagonMusapKahraman.GridMap
+namespace HexagonGame.GridMap
 {
     [CustomEditor(typeof(GridResizer))]
     public class LookAtPointEditor : Editor

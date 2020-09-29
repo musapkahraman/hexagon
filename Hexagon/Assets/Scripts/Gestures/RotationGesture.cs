@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace HexagonMusapKahraman.Gestures
+namespace HexagonGame.Gestures
 {
     public static class RotationGesture
     {

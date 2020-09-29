@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using HexagonMusapKahraman.GridMap;
-using HexagonMusapKahraman.ScriptableObjects;
+using HexagonGame.GridMap;
 using UnityEngine;
 
-namespace HexagonMusapKahraman.Core
+namespace HexagonGame.Core
 {
     public class PlacedHexagon
     {

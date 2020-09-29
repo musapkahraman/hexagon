@@ -1,8 +1,7 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace HexagonMusapKahraman.GridMap
+namespace HexagonGame.GridMap
 {
     public class GridResizer : MonoBehaviour
     {

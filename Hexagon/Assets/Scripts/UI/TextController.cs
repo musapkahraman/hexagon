@@ -1,8 +1,8 @@
-﻿using HexagonMusapKahraman.ScriptableObjects;
+﻿using HexagonGame.Core;
 using TMPro;
 using UnityEngine;
 
-namespace HexagonMusapKahraman.UI
+namespace HexagonGame.UI
 {
     public class TextController : MonoBehaviour
     {

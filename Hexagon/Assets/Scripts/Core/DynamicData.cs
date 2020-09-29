@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace HexagonMusapKahraman.ScriptableObjects
+namespace HexagonGame.Core
 {
     [CreateAssetMenu]
     public class DynamicData : ScriptableObject

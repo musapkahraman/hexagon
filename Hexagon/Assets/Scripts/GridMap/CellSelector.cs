@@ -1,9 +1,9 @@
-﻿using HexagonMusapKahraman.Core;
-using HexagonMusapKahraman.Gestures;
+﻿using HexagonGame.Core;
+using HexagonGame.Gestures;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace HexagonMusapKahraman.GridMap
+namespace HexagonGame.GridMap
 {
     [RequireComponent(typeof(BoxCollider2D))]
     public class CellSelector : MonoBehaviour, IPointerClickHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
